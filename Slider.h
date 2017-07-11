@@ -47,7 +47,8 @@ public:
 
     void ResetState(const float startX, const float startY, 
         const int ixClient, const int iyClient, 
-        const int iScaledWidth, const int iScaledHeight);
+        const int iScaledWidth, const int iScaledHeight,
+        const int iInitialWidth, const int iInitialHeight);
 
     void Paint() override;
     void Translate(float fdx, float fdy, bool bInertia) override;
@@ -69,6 +70,8 @@ public:
 
 
 private:
+    void HandleSingleTouchContact(float y);
+
     void RotateVector(float* vector, float* tVector, float fAngle);
     void ComputeElasticPoint(float fIPt, float* fRPt, int iDimension);
     void UpdateBorders(); 

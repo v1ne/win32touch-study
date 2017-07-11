@@ -4,7 +4,7 @@
 // PARTICULAR PURPOSE.
 //
 // Copyright (c) Microsoft Corporation. All rights reserved.
-// Copyright (c) v1ne 
+// Copyright (c) v1ne
 #include "Slider.h"
 #include <math.h>
 
@@ -26,8 +26,9 @@ CSlider::~CSlider()
 }
 
 
-void CSlider::ManipulationStarted(FLOAT x, FLOAT y) {}
-
+void CSlider::ManipulationStarted(FLOAT x, FLOAT y) {
+  HandleSingleTouchContact(y);
+}
 
 void CSlider::ManipulationDelta(
     FLOAT x,
@@ -42,7 +43,10 @@ void CSlider::ManipulationDelta(
     FLOAT cumulativeScale,
     FLOAT cumulativeExpansion,
     FLOAT cumulativeRotation,
-    bool isExtrapolated) {}
+    bool isExtrapolated) {
+  if (!isExtrapolated)
+    HandleSingleTouchContact(y);
+}
 
 void CSlider::ManipulationCompleted(
     FLOAT x,
@@ -51,12 +55,29 @@ void CSlider::ManipulationCompleted(
     FLOAT cumulativeTranslationY,
     FLOAT cumulativeScale,
     FLOAT cumulativeExpansion,
-    FLOAT cumulativeRotation) {}
+    FLOAT cumulativeRotation) {
+  //HandleSingleTouchContact(y); ????? Warum springt y zu CenterY zurück?
+}
 
 
-void CSlider::ResetState(const float startX, const float startY, 
+void CSlider::HandleSingleTouchContact(float y)
+{
+    const auto borderWidth = m_fWidth / 4;
+    const auto topBorder = m_fHeight * 10 / 100;
+    const auto topEnd = m_fYR + topBorder;
+    const auto bottomPos = m_fYR+m_fHeight;
+    const auto sliderHeight = bottomPos - topEnd;
+
+    //if (y == GetCenterY()) ::DebugBreak();
+
+    m_value = float(::fmax(0, ::fmin(1, (bottomPos - y) / sliderHeight)));
+}
+
+
+void CSlider::ResetState(const float startX, const float startY,
   const int ixClient, const int iyClient,
-  const int iScaledWidth, const int iScaledHeight)
+  const int iScaledWidth, const int iScaledHeight,
+  const int iInitialWidth, const int iInitialHeight)
 {
   // Set width and height of the client area
   // must adjust for dpi aware
@@ -64,8 +85,8 @@ void CSlider::ResetState(const float startX, const float startY,
   m_iCHeight = iScaledHeight;
 
   // Initialize width height of object
-  m_fWidth   = INITIAL_OBJ_WIDTH;
-  m_fHeight  = INITIAL_OBJ_HEIGHT;
+  m_fWidth   = iInitialWidth;
+  m_fHeight  = iInitialHeight;
 
   // Set outer elastic border
   UpdateBorders();
@@ -91,7 +112,7 @@ void CSlider::ResetState(const float startX, const float startY,
   m_fAngleCumulative = 0.0f;
 
   if(!m_spRT) return;
-    
+
   D2D1_SIZE_U  size = {UINT32(ixClient), UINT32(iyClient)};
   if (FAILED(m_spRT->Resize(size)))
   {
@@ -108,13 +129,13 @@ void CSlider::Paint()
   if(!(m_spRT->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
   {
     const auto rotateMatrix = D2D1::Matrix3x2F::Rotation(
-      m_fAngleCumulative, 
+      m_fAngleCumulative,
       D2D1::Point2F(
-        m_fXR + m_fWidth/2.0f, 
-        m_fYR + m_fHeight/2.0f 
+        m_fXR + m_fWidth/2.0f,
+        m_fYR + m_fHeight/2.0f
       )
     );
-    
+
     m_spRT->SetTransform(&rotateMatrix);
 
     // Store the rotate matrix to be used in hit testing
@@ -158,10 +179,10 @@ void CSlider::Translate(float fdx, float fdy, bool bInertia)
   fOffset[0] = m_fOX - m_fdX;
   fOffset[1] = m_fOY - m_fdY;
 
-  // Translate based on the offset caused by rotating 
-  // and scaling in order to vary rotational behavior depending 
+  // Translate based on the offset caused by rotating
+  // and scaling in order to vary rotational behavior depending
   // on where the manipulation started
-  
+
   if(m_fAngleApplied != 0.0f)
   {
     float v1[2];
@@ -184,7 +205,7 @@ void CSlider::Translate(float fdx, float fdy, bool bInertia)
     float v2[2];
     v2[0] = v1[0] * m_fFactor;
     v2[1] = v1[1] * m_fFactor;
-    
+
     m_fdX += v2[0] - v1[0];
     m_fdY += v2[1] - v1[1];
   }
@@ -192,7 +213,7 @@ void CSlider::Translate(float fdx, float fdy, bool bInertia)
   m_fXI += m_fdX;
   m_fYI += m_fdY;
 
-  // The following code handles the effect for 
+  // The following code handles the effect for
   // bouncing off the edge of the screen.  It takes
   // the x,y coordinates computed by the inertia processor
   // and calculates the appropriate render coordinates
@@ -228,13 +249,13 @@ void CSlider::Scale(const float dFactor)
   float scaledH = (dFactor-1) * m_fHeight;
   float scaledX = scaledW/2.0f;
   float scaledY = scaledH/2.0f;
-  
+
   m_fXI -= scaledX;
   m_fYI -= scaledY;
 
   m_fWidth  += scaledW;
   m_fHeight += scaledH;
-  
+
   // Only limit scaling in the case that the factor is not 1.0
 
   if(dFactor != 1.0f)
@@ -281,10 +302,10 @@ void CSlider::RotateVector(float *vector, float *tVector, float fAngle)
 bool CSlider::InRegion(LONG x, LONG y)
 {
   BOOL b = FALSE;
-  
+
   m_spRectGeometry->FillContainsPoint(
     D2D1::Point2F((float)x, (float)y),
-    &m_lastMatrix, 
+    &m_lastMatrix,
     &b
   );
   return b;
@@ -316,10 +337,10 @@ void CSlider::ComputeElasticPoint(float fIPt, float *fRPt, int iBSize)
   // Divide the cumulative translation vector by the max border size
   auto q = int(fabsf(fIPt) / iBSize);
   int direction = q % 2;
-  
+
   // Calculate the remainder this is the new render coordinate
   float newPt = fabsf(fIPt) - (float)(iBSize*q);
-  
+
   if (direction == DEFAULT_DIRECTION)
   {
     *fRPt = newPt;

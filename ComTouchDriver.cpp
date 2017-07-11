@@ -95,7 +95,7 @@ BOOL CComTouchDriver::Initialize()
             }
         }
 
-        for (int i = 0; i < NUM_SLIDERS; i++)
+        for (int i = 0; i < NUM_SLIDERS + 1; i++)
         {
           auto pObject = new (std::nothrow) CCoreObject(m_hWnd, i, m_d2dDriver, false);
           pObject->Initialize(new (std::nothrow) CSlider(m_hWnd, m_d2dDriver));
@@ -331,9 +331,13 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
     const auto numSliderColumns = int(sqrt(NUM_SLIDERS * sliderDistance.y / sliderDistance.x));
     for(int i = 0; i < NUM_SLIDERS; i++) {
       const auto pos = POINTF{sliderBorder + sliderDistance.x * (i % numSliderColumns), sliderBorder + sliderDistance.y * (i / numSliderColumns)};
-      ((CSlider*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled);
+      ((CSlider*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, 50, 200);
       ++iObject;
     }
+
+    const auto pos = POINTF{sliderBorder + sliderDistance.x*11, sliderBorder};
+    ((CSlider*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, 50, int(3*sliderDistance.y - sliderBorder));
+    ++iObject;
 
 RenderObjects();
 }
