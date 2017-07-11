@@ -7,6 +7,8 @@
 
 #include "ComTouchDriver.h"
 
+#include "Square.h"
+
 CComTouchDriver::CComTouchDriver(HWND hWnd):
     m_hWnd(hWnd), 
     m_uNumContacts(0),
@@ -307,9 +309,6 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
 
     // Defines default position for objects
     POINTF pfObjPos[NUM_CORE_OBJECTS];
-    CDrawingObject::DrawingColor uObjColor[NUM_CORE_OBJECTS];
-    int i = 0;
-
     pfObjPos[0].x = widthScaled  / 2.0f-205.0f;
     pfObjPos[0].y = heightScaled / 2.0f-205.0f;
     pfObjPos[1].x = widthScaled  / 2.0f+5.0f;
@@ -320,19 +319,18 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
     pfObjPos[3].y = heightScaled / 2.0f+5.0f;
     
     // Defines color for objects
-
-    uObjColor[0] = CDrawingObject::Red;
-    uObjColor[1] = CDrawingObject::Green;
-    uObjColor[2] = CDrawingObject::Blue;
-    uObjColor[3] = CDrawingObject::Orange;
+    CSquare::DrawingColor uObjColor[NUM_CORE_OBJECTS];
+    uObjColor[0] = CSquare::Red;
+    uObjColor[1] = CSquare::Green;
+    uObjColor[2] = CSquare::Blue;
+    uObjColor[3] = CSquare::Orange;
 
 
     // Assign the setup defined above to each of the core objects
-    std::list<CCoreObject*>::iterator it;
-
-    for(it = m_lCoreObjects.begin(); it != m_lCoreObjects.end(); ++it)
+    int i = 0;
+    for(const auto pObject : m_lCoreObjects)
     {
-        (*it)->doDrawing->ResetState(pfObjPos[i].x, pfObjPos[i].y, iCWidth, iCHeight, widthScaled, heightScaled, uObjColor[i]);
+        ((CSquare*)pObject->doDrawing)->ResetState(pfObjPos[i].x, pfObjPos[i].y, iCWidth, iCHeight, widthScaled, heightScaled, uObjColor[i]);
         i++;
     }
 

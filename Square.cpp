@@ -5,14 +5,14 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved
 
-#include "DrawingObject.h"
+#include "Square.h"
 #include <math.h>
 
 #define INITIAL_OBJ_WIDTH	200
 #define INITIAL_OBJ_HEIGHT	200
 #define DEFAULT_DIRECTION	0
 
-CDrawingObject::CDrawingObject(HWND hwnd, CD2DDriver* d2dDriver) :
+CSquare::CSquare(HWND hwnd, CD2DDriver* d2dDriver) :
     m_hWnd(hwnd),
     m_d2dDriver(d2dDriver)
 {
@@ -20,12 +20,12 @@ CDrawingObject::CDrawingObject(HWND hwnd, CD2DDriver* d2dDriver) :
     m_spRT = m_d2dDriver->GetRenderTarget();
 }
 
-CDrawingObject::~CDrawingObject()
+CSquare::~CSquare()
 {
 }
 
 // Sets the default position, dimensions and color for the drawing object
-VOID CDrawingObject::ResetState(const FLOAT startX, const FLOAT startY, 
+void CSquare::ResetState(const float startX, const float startY, 
                                 const int ixClient, const int iyClient,
                                 const int iScaledWidth, const int iScaledHeight,
                                 const DrawingColor colorChoice)
@@ -98,11 +98,11 @@ VOID CDrawingObject::ResetState(const FLOAT startX, const FLOAT startY,
     }
 }
 
-VOID CDrawingObject::Paint()
+void CSquare::Paint()
 {
     if(!(m_spRT->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
     {
-        FLOAT fGlOffset = 2.5f;
+        float fGlOffset = 2.5f;
     
         // Setup our matrices for performing transforms
 
@@ -210,12 +210,12 @@ VOID CDrawingObject::Paint()
     }
 }
 
-VOID CDrawingObject::Translate(FLOAT fdx, FLOAT fdy, BOOL bInertia)
+void CSquare::Translate(float fdx, float fdy, bool bInertia)
 {
     m_fdX = fdx;
     m_fdY = fdy;
 
-    FLOAT fOffset[2];
+    float fOffset[2];
     fOffset[0] = m_fOX - m_fdX;
     fOffset[1] = m_fOY - m_fdY;
 
@@ -225,11 +225,11 @@ VOID CDrawingObject::Translate(FLOAT fdx, FLOAT fdy, BOOL bInertia)
     
     if(m_fAngleApplied != 0.0f)
     {
-        FLOAT v1[2];
+        float v1[2];
         v1[0] = GetCenterX() - fOffset[0];
         v1[1] = GetCenterY() - fOffset[1];
 
-        FLOAT v2[2];
+        float v2[2];
         RotateVector(v1, v2, m_fAngleApplied);
 
         m_fdX += v2[0] - v1[0];
@@ -238,11 +238,11 @@ VOID CDrawingObject::Translate(FLOAT fdx, FLOAT fdy, BOOL bInertia)
 
     if(m_fFactor != 1.0f)
     {
-        FLOAT v1[2];
+        float v1[2];
         v1[0] = GetCenterX() - fOffset[0];
         v1[1] = GetCenterY() - fOffset[1];
 
-        FLOAT v2[2];
+        float v2[2];
         v2[0] = v1[0] * m_fFactor;
         v2[1] = v1[1] * m_fFactor;
         
@@ -274,21 +274,21 @@ VOID CDrawingObject::Translate(FLOAT fdx, FLOAT fdy, BOOL bInertia)
     }
 }
 
-VOID CDrawingObject::EnsureVisible()
+void CSquare::EnsureVisible()
 {
-    m_fXR = max(0,min(m_fXI, (FLOAT)m_iCWidth-m_fWidth));
-    m_fYR = max(0,min(m_fYI, (FLOAT)m_iCHeight-m_fHeight));
+    m_fXR = max(0,min(m_fXI, (float)m_iCWidth-m_fWidth));
+    m_fYR = max(0,min(m_fYI, (float)m_iCHeight-m_fHeight));
     RestoreRealPosition();
 }
 
-VOID CDrawingObject::Scale(const FLOAT dFactor)
+void CSquare::Scale(const float dFactor)
 {
     m_fFactor = dFactor;
 
-    FLOAT scaledW = (dFactor-1) * m_fWidth;
-    FLOAT scaledH = (dFactor-1) * m_fHeight;
-    FLOAT scaledX = scaledW/2.0f;
-    FLOAT scaledY = scaledH/2.0f;
+    float scaledW = (dFactor-1) * m_fWidth;
+    float scaledH = (dFactor-1) * m_fHeight;
+    float scaledX = scaledW/2.0f;
+    float scaledY = scaledH/2.0f;
     
     m_fXI -= scaledX;
     m_fYI -= scaledY;
@@ -311,20 +311,20 @@ VOID CDrawingObject::Scale(const FLOAT dFactor)
     UpdateBorders();
 }
 
-VOID CDrawingObject::Rotate(const FLOAT fAngle)
+void CSquare::Rotate(const float fAngle)
 {
     m_fAngleCumulative += fAngle;
     m_fAngleApplied = fAngle;
 }
 
-VOID CDrawingObject::SetManipulationOrigin(FLOAT x, FLOAT y)
+void CSquare::SetManipulationOrigin(float x, float y)
 {
     m_fOX = x;
     m_fOY = y;
 }
 
 // Helper method that rotates a vector using basic math transforms
-VOID CDrawingObject::RotateVector(FLOAT *vector, FLOAT *tVector, FLOAT fAngle)
+void CSquare::RotateVector(float *vector, float *tVector, float fAngle)
 {
     auto fAngleRads = fAngle / 180.0f * 3.14159f;
     auto fSin = float(sin(fAngleRads));
@@ -339,12 +339,12 @@ VOID CDrawingObject::RotateVector(FLOAT *vector, FLOAT *tVector, FLOAT fAngle)
 
 
 // Hit testing method handled with Direct2D
-BOOL CDrawingObject::InRegion(LONG x, LONG y)
+bool CSquare::InRegion(LONG x, LONG y)
 {
     BOOL b = FALSE;
     
     m_spRoundedRectGeometry->FillContainsPoint(
-        D2D1::Point2F((FLOAT)x, (FLOAT)y),
+        D2D1::Point2F((float)x, (float)y),
         &m_lastMatrix, 
         &b
     );
@@ -352,20 +352,20 @@ BOOL CDrawingObject::InRegion(LONG x, LONG y)
 }
 
 // Sets the internal coordinates to render coordinates
-VOID CDrawingObject::RestoreRealPosition()
+void CSquare::RestoreRealPosition()
 {
     m_fXI = m_fXR;
     m_fYI = m_fYR;
 }
 
-VOID CDrawingObject::UpdateBorders()
+void CSquare::UpdateBorders()
 {
     m_iBorderX = m_iCWidth  - (int)m_fWidth;
     m_iBorderY = m_iCHeight - (int)m_fHeight;
 }
 
 // Computes the the elastic point and sets the render coordinates
-VOID CDrawingObject::ComputeElasticPoint(FLOAT fIPt, FLOAT *fRPt, int iBSize)
+void CSquare::ComputeElasticPoint(float fIPt, float *fRPt, int iBSize)
 {
     // If the border size is 0 then do not attempt
     // to calculate the render point for elasticity
@@ -379,7 +379,7 @@ VOID CDrawingObject::ComputeElasticPoint(FLOAT fIPt, FLOAT *fRPt, int iBSize)
     int direction = q % 2;
     
     // Calculate the remainder this is the new render coordinate
-    FLOAT newPt = fabsf(fIPt) - (FLOAT)(iBSize*q);
+    float newPt = fabsf(fIPt) - (float)(iBSize*q);
     
     if (direction == DEFAULT_DIRECTION)
     {
@@ -387,6 +387,13 @@ VOID CDrawingObject::ComputeElasticPoint(FLOAT fIPt, FLOAT *fRPt, int iBSize)
     }
     else
     {
-        *fRPt = (FLOAT)iBSize - newPt;
+        *fRPt = (float)iBSize - newPt;
     }
 }
+
+float CSquare::GetPosY() { return m_fYI; }
+float CSquare::GetPosX() { return m_fXI; }
+float CSquare::GetWidth() { return m_fWidth; }
+float CSquare::GetHeight() { return m_fHeight; }
+float CSquare::GetCenterX() { return m_fXI + m_fWidth/2.0f; }
+float CSquare::GetCenterY() { return m_fYI + m_fHeight/2.0f; }

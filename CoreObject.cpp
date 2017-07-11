@@ -6,6 +6,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved
 
 #include "CoreObject.h"
+#include "Square.h"
 #include <manipulations_i.c>
 #include <new>
 
@@ -54,7 +55,7 @@ BOOL CCoreObject::Initialize()
             manipulationProc->put_SupportedManipulations(manipulations);
         }
 
-        doDrawing = new (std::nothrow) CDrawingObject(m_hWnd, m_d2dDriver);
+        doDrawing = new (std::nothrow) CSquare(m_hWnd, m_d2dDriver);
 
         if(doDrawing == NULL)
         {

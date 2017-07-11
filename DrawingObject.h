@@ -5,98 +5,30 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved
 
-#ifndef DRAWINGOBJECT_H
-#define DRAWINGOBJECT_H
+#pragma once
 
 #include "D2DDriver.h"
 #include <windows.h>
 
 class CDrawingObject {
 public:
-    enum DrawingColor {Blue, Orange, Green, Red};
+  virtual ~CDrawingObject() {};
 
-    CDrawingObject(HWND hwnd, CD2DDriver* d2dDriver);
-    ~CDrawingObject();
+  virtual void Paint() = 0;
+  virtual void Translate(float fdx, float fdy, bool bInertia) = 0;
+  virtual void Scale(const float fFactor) = 0;
+  virtual void Rotate(const float fAngle) = 0;
+  virtual bool InRegion(long lX, long lY) = 0;
+  virtual void RestoreRealPosition() = 0;
 
-    VOID ResetState(const FLOAT startX, const FLOAT startY, 
-        const int ixClient, const int iyClient, 
-        const int iScaledWidth, const int iScaledHeight,
-        const DrawingColor colorChoice);
-    VOID Paint();
-    VOID Translate(FLOAT fdx, FLOAT fdy, BOOL bInertia);
-    VOID Scale(const FLOAT fFactor);
-    VOID Rotate(const FLOAT fAngle);
-    BOOL InRegion(LONG lX, LONG lY);
-    VOID RestoreRealPosition();
+  // Public set method
+  virtual void SetManipulationOrigin(float x, float y) = 0;
 
-    // Public set method
-    VOID SetManipulationOrigin(FLOAT x, FLOAT y);
-
-    // Public get methods
-    FLOAT GetPosY() { return m_fYI; }
-    FLOAT GetPosX() { return m_fXI; }
-    FLOAT GetWidth() { return m_fWidth; }
-    FLOAT GetHeight() { return m_fHeight; }
-    FLOAT GetCenterX() { return m_fXI + m_fWidth/2.0f; }
-    FLOAT GetCenterY() { return m_fYI + m_fHeight/2.0f; }
-
-
-private:
-    VOID RotateVector(FLOAT* vector, FLOAT* tVector, FLOAT fAngle);
-    VOID ComputeElasticPoint(FLOAT fIPt, FLOAT* fRPt, int iDimension);
-    VOID UpdateBorders(); 
-    VOID EnsureVisible();
-
-    HWND m_hWnd;
-
-    CD2DDriver* m_d2dDriver;
-
-    // D2D brushes
-    ID2D1HwndRenderTargetPtr	m_spRT;
-    ID2D1LinearGradientBrushPtr m_pGlBrush;
-    ID2D1LinearGradientBrushPtr m_currBrush;
-    
-    ID2D1RoundedRectangleGeometryPtr m_spRoundedRectGeometry;
-    
-    // Keeps the last matrix used to perform the rotate transform
-    D2D_MATRIX_3X2_F m_lastMatrix;
-
-    // Coordinates of where manipulation started
-    FLOAT m_fOX;
-    FLOAT m_fOY;
-
-    // Internal top, left coordinates of object (Real inertia values)
-    FLOAT m_fXI;
-    FLOAT m_fYI;
-    
-    // Rendered top, left coordinates of object
-    FLOAT m_fXR;
-    FLOAT m_fYR;
-    
-    // Width and height of the object
-    FLOAT m_fWidth;
-    FLOAT m_fHeight;
-
-    // Scaling factor applied to the object
-    FLOAT m_fFactor;
-
-    // Cumulative angular rotation applied to the object
-    FLOAT m_fAngleCumulative;
-
-    // Current angular rotation applied to object
-    FLOAT m_fAngleApplied;
-
-    // Delta x, y values
-    FLOAT m_fdX;
-    FLOAT m_fdY;
-
-    // Right and bottom borders relative to the object's size
-    int m_iBorderX;
-    int m_iBorderY;
-
-    // Client width and height
-    int m_iCWidth;
-    int m_iCHeight;
+  // Public get methods
+  virtual float GetPosY() = 0;
+  virtual float GetPosX() = 0;
+  virtual float GetWidth() = 0;
+  virtual float GetHeight() = 0;
+  virtual float GetCenterX() = 0;
+  virtual float GetCenterY() = 0;
 };
-
-#endif
