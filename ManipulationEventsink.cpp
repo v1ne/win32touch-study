@@ -101,7 +101,7 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
     HRESULT hr = S_OK;
     if(!m_bInertia)
     {
-        HRESULT hrSI = SetupInertia(ip, mp);
+        HRESULT hrSI = SetupInertia(x, y, ip, mp);
         HRESULT hrCO = S_OK;
 
         if(FAILED(hrSI) || FAILED(hrCO))
@@ -129,7 +129,7 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
     return hr;
 }
 
-HRESULT CManipulationEventSink::SetupInertia(IInertiaProcessor* ip, IManipulationProcessor* mp)
+HRESULT CManipulationEventSink::SetupInertia(float x, float y, IInertiaProcessor* ip, IManipulationProcessor* mp)
 {
     HRESULT hr = S_OK;
 
@@ -143,8 +143,8 @@ HRESULT CManipulationEventSink::SetupInertia(IInertiaProcessor* ip, IManipulatio
 
     // Set initial origins
 
-    HRESULT hrPutIOX = ip->put_InitialOriginX(m_coRef->doDrawing->GetCenterX());
-    HRESULT hrPutIOY = ip->put_InitialOriginY(m_coRef->doDrawing->GetCenterY());
+    HRESULT hrPutIOX = ip->put_InitialOriginX(x);
+    HRESULT hrPutIOY = ip->put_InitialOriginY(y);
     
     FLOAT fVX;
     FLOAT fVY;

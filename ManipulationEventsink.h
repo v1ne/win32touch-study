@@ -68,7 +68,7 @@ public:
     STDMETHOD(QueryInterface)(REFIID riid, LPVOID *ppvObj);
 
 private:
-    HRESULT SetupInertia(IInertiaProcessor* ip, IManipulationProcessor* mp);
+    HRESULT SetupInertia(float x, float y, IInertiaProcessor* ip, IManipulationProcessor* mp);
     
     IConnectionPoint* m_pConnPoint;
     volatile unsigned int m_cRefCount;

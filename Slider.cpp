@@ -44,7 +44,6 @@ void CSlider::ManipulationDelta(
     FLOAT cumulativeExpansion,
     FLOAT cumulativeRotation,
     bool isExtrapolated) {
-  if (!isExtrapolated)
     HandleSingleTouchContact(y);
 }
 
@@ -56,7 +55,7 @@ void CSlider::ManipulationCompleted(
     FLOAT cumulativeScale,
     FLOAT cumulativeExpansion,
     FLOAT cumulativeRotation) {
-  //HandleSingleTouchContact(y); ????? Warum springt y zu CenterY zurück?
+  HandleSingleTouchContact(y);
 }
 
 
@@ -85,8 +84,8 @@ void CSlider::ResetState(const float startX, const float startY,
   m_iCHeight = iScaledHeight;
 
   // Initialize width height of object
-  m_fWidth   = iInitialWidth;
-  m_fHeight  = iInitialHeight;
+  m_fWidth   = float(iInitialWidth);
+  m_fHeight  = float(iInitialHeight);
 
   // Set outer elastic border
   UpdateBorders();
