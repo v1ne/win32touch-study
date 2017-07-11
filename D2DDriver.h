@@ -19,6 +19,7 @@ _COM_SMARTPTR_TYPEDEF(ID2D1LinearGradientBrush, __uuidof(ID2D1LinearGradientBrus
 _COM_SMARTPTR_TYPEDEF(ID2D1SolidColorBrush, __uuidof(ID2D1SolidColorBrush));
 _COM_SMARTPTR_TYPEDEF(ID2D1RectangleGeometry, __uuidof(ID2D1RectangleGeometry));
 _COM_SMARTPTR_TYPEDEF(ID2D1RoundedRectangleGeometry, __uuidof(ID2D1RoundedRectangleGeometry));
+_COM_SMARTPTR_TYPEDEF(ID2D1EllipseGeometry, __uuidof(ID2D1EllipseGeometry));
 _COM_SMARTPTR_TYPEDEF(IDWriteFactory, __uuidof(IDWriteFactory));
 _COM_SMARTPTR_TYPEDEF(IDWriteTextFormat, __uuidof(IDWriteTextFormat));
 
@@ -35,12 +36,12 @@ public:
     HRESULT CreateDeviceResources();
     VOID DiscardDeviceResources();
     
-    HRESULT CreateGeometryRoundedRect(D2D1_ROUNDED_RECT rect, ID2D1RoundedRectangleGeometry** spRoundedRectGeometry);
-    HRESULT CreateGeometryRect(D2D1_RECT_F rect, ID2D1RectangleGeometry** spRectGeometry);
+    HRESULT CreateGeometryRoundedRect(const D2D1_ROUNDED_RECT& rect, ID2D1RoundedRectangleGeometry** spRoundedRectGeometry);
+    HRESULT CreateGeometryRect(const D2D1_RECT_F& rect, ID2D1RectangleGeometry** spRectGeometry);
+    HRESULT CreateEllipseGeometry(const D2D1_ELLIPSE& params, ID2D1EllipseGeometry** spEllipseGeometry);
     HRESULT RenderBackground(FLOAT clientWidth, FLOAT clientHeight);
     ID2D1HwndRenderTargetPtr GetRenderTarget();
     ID2D1LinearGradientBrushPtr get_GradBrush(unsigned int uBrushType);
-    ID2D1SolidColorBrushPtr get_SolidBrush(unsigned int uBrushType);
 
     void RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len);
 

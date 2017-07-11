@@ -11,11 +11,12 @@
 #include "Square.h"
 
 #define NUM_SLIDERS 33
+#define NUM_KNOBS 25
 
 CComTouchDriver::CComTouchDriver(HWND hWnd):
-    m_hWnd(hWnd), 
+    m_hWnd(hWnd),
     m_uNumContacts(0),
-    m_dpiScaleX(1.0f), 
+    m_dpiScaleX(1.0f),
     m_dpiScaleY(1.0f)
 {
 }
@@ -25,9 +26,9 @@ BOOL CComTouchDriver::Initialize()
     BOOL success = TRUE;
 
     // Calculate dpi for high-DPI systems
- 
+
     HDC hdcScreen = GetDC(m_hWnd);
-    
+
     if(hdcScreen)
     {
         // Direct2D automatically does work in logical, so compute the
@@ -37,7 +38,7 @@ BOOL CComTouchDriver::Initialize()
         m_dpiScaleY = (FLOAT)(DEFAULT_PPI / GetDeviceCaps(hdcScreen, LOGPIXELSY));
         DeleteDC(hdcScreen);
     }
-    
+
     // Create and initialize D2DDriver
 
     m_d2dDriver = new (std::nothrow) CD2DDriver(m_hWnd);
@@ -58,19 +59,19 @@ BOOL CComTouchDriver::Initialize()
         for(int i = 0; i < NUM_CORE_OBJECTS; i++)
         {
             CCoreObject* object = NULL;
-            
+
             object = new (std::nothrow) CCoreObject(m_hWnd, i, m_d2dDriver, i == 0);
 
             if(object == NULL)
             {
                 success = FALSE;
             }
-            
+
             if(success)
             {
                 success = object->Initialize(new (std::nothrow) CSquare(m_hWnd, m_d2dDriver));
             }
-            
+
             // Append core object to the list
             if(success)
             {
@@ -98,7 +99,16 @@ BOOL CComTouchDriver::Initialize()
         for (int i = 0; i < NUM_SLIDERS + 1; i++)
         {
           auto pObject = new (std::nothrow) CCoreObject(m_hWnd, i, m_d2dDriver, false);
-          pObject->Initialize(new (std::nothrow) CSlider(m_hWnd, m_d2dDriver, CSlider::Mode(i % CSlider::NUM_MODES)));
+          pObject->Initialize(new (std::nothrow) CSlider(m_hWnd, m_d2dDriver,
+            CSlider::TYPE_SLIDER, CSlider::InteractionMode(i % CSlider::NUM_MODES)));
+          m_lCoreObjects.push_front(pObject);
+        }
+
+        for (int i = 0; i < NUM_KNOBS; i++)
+        {
+          auto pObject = new (std::nothrow) CCoreObject(m_hWnd, i, m_d2dDriver, false);
+          pObject->Initialize(new (std::nothrow) CSlider(m_hWnd, m_d2dDriver,
+            CSlider::TYPE_KNOB, CSlider::InteractionMode(i % CSlider::NUM_MODES)));
           m_lCoreObjects.push_front(pObject);
         }
     }
@@ -133,7 +143,7 @@ VOID CComTouchDriver::ProcessInputEvent(const TOUCHINPUT* inData)
     DWORD dwEvent = inData->dwFlags;
     BOOL bFoundObj = FALSE;	
 
-    
+
     // Check if contacts should be incremented
     if((dwEvent & TOUCHEVENTF_DOWN) && (dwCursorID != MOUSE_CURSOR_ID))
     {
@@ -154,8 +164,8 @@ VOID CComTouchDriver::ProcessInputEvent(const TOUCHINPUT* inData)
     if((dwEvent & TOUCHEVENTF_UP) && (dwCursorID != MOUSE_CURSOR_ID))
     {
         m_uNumContacts--;
-    }    
-    
+    }
+
     // Find the object and associate the cursor id with the object
     if(dwEvent & TOUCHEVENTF_DOWN)
     {
@@ -198,7 +208,7 @@ VOID CComTouchDriver::DownEvent(CCoreObject* coRef, const TOUCHINPUT* inData, BO
     {
         // Feed values to the Manipulation Processor
         success = SUCCEEDED(coRef->manipulationProc->ProcessDownWithTime(dwCursorID, (FLOAT)x, (FLOAT)y, dwPTime));
-        
+
         if(success)
         {
             try
@@ -218,9 +228,9 @@ VOID CComTouchDriver::DownEvent(CCoreObject* coRef, const TOUCHINPUT* inData, BO
             // Make the current object the new head of the list
             m_lCoreObjects.remove(coRef);
             m_lCoreObjects.push_front(coRef);
-            
+
             *bFound = TRUE;
-            
+
             // Renders objects to bring new object to front
             RenderObjects();
         }
@@ -298,10 +308,10 @@ VOID CComTouchDriver::RenderObjects()
 {
     m_d2dDriver->BeginDraw();
     m_d2dDriver->RenderBackground((FLOAT)m_iCWidth, (FLOAT)m_iCHeight);	
-    
+
     std::list<CCoreObject*>::reverse_iterator it;
 
-    for(it = m_lCoreObjects.rbegin(); it != m_lCoreObjects.rend(); ++it) 
+    for(it = m_lCoreObjects.rbegin(); it != m_lCoreObjects.rend(); ++it)
     {
         (*it)->doDrawing->Paint();
     }
@@ -335,9 +345,18 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
       ++iObject;
     }
 
-    const auto pos = POINTF{sliderBorder + sliderDistance.x*11, sliderBorder};
+    const auto pos = POINTF{sliderBorder + sliderDistance.x*11, float(sliderBorder)};
     ((CSlider*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, 50, int(3*sliderDistance.y - sliderBorder));
-    ++iObject;
+
+    const auto knobBorder = 2;
+    const auto knobDistance = POINTF{50 + knobBorder, 50 + knobBorder};
+    const auto numKnobColumns = int(sqrt(NUM_KNOBS * knobDistance.y / knobDistance.x));
+    for(int i = 0; i < NUM_KNOBS; i++) {
+      ++iObject;
+      const auto pos = POINTF{knobBorder + knobDistance.x * (i % numKnobColumns), heightScaled - (knobBorder + knobDistance.y * (1 + i / numKnobColumns))};
+      ((CSlider*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, 50, 50);
+    }
+
 
 RenderObjects();
 }

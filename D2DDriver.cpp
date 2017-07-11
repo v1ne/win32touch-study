@@ -50,7 +50,7 @@ HRESULT CD2DDriver::CreateDeviceIndependentResources() {
     return hr;
 }
 
-HRESULT CD2DDriver::CreateGeometryRoundedRect(D2D1_ROUNDED_RECT rect, 
+HRESULT CD2DDriver::CreateGeometryRoundedRect(const D2D1_ROUNDED_RECT& rect, 
                                               ID2D1RoundedRectangleGeometry** spRoundedRectGeometry) {
     HRESULT hr = m_spD2DFactory->CreateRoundedRectangleGeometry(
         rect, 
@@ -59,9 +59,15 @@ HRESULT CD2DDriver::CreateGeometryRoundedRect(D2D1_ROUNDED_RECT rect,
     return hr;
 }
 
-HRESULT CD2DDriver::CreateGeometryRect(D2D1_RECT_F rect, ID2D1RectangleGeometry** spRectGeometry) {
+HRESULT CD2DDriver::CreateGeometryRect(const D2D1_RECT_F& rect, ID2D1RectangleGeometry** spRectGeometry) {
   return m_spD2DFactory->CreateRectangleGeometry(rect, spRectGeometry);
 }
+
+
+HRESULT CD2DDriver::CreateEllipseGeometry(const D2D1_ELLIPSE& params, ID2D1EllipseGeometry** spEllipseGeometry) {
+  return m_spD2DFactory->CreateEllipseGeometry(params, spEllipseGeometry);
+}
+
 
 HRESULT CD2DDriver::CreateDeviceResources() {
     HRESULT hr = S_OK;

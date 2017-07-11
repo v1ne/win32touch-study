@@ -13,11 +13,12 @@
 #define DEFAULT_DIRECTION	0
 
 
-CSlider::CSlider(HWND hwnd, CD2DDriver* d2dDriver, Mode mode) :
+CSlider::CSlider(HWND hwnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode) :
   m_hWnd(hwnd),
   m_spRT(d2dDriver->GetRenderTarget()),
   m_d2dDriver(d2dDriver),
-  m_mode(mode)
+  m_mode(mode),
+  m_type(type)
 {
 }
 
@@ -42,7 +43,7 @@ void CSlider::ManipulationDelta(FLOAT x, FLOAT y,
     bool isExtrapolated) {
   if(gShiftPressed) {
     FLOAT rads = 180.0f / 3.14159f;
-    
+
     SetManipulationOrigin(x, y);
 
     Rotate(rotationDelta*rads);
@@ -71,16 +72,16 @@ void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY)
 {
   switch(m_mode) {
   case MODE_ABSOLUTE:
-    HandleTouchInAbsoluteMode(y);
+    HandleTouchInAbsoluteInteractionMode(y);
     break;
   case MODE_RELATIVE:
-    HandleTouchInRelativeMode(cumultiveTranslationX, deltaY);
+    HandleTouchInRelativeInteractionMode(cumultiveTranslationX, deltaY);
     break;
   }
 }
 
 
-void CSlider::HandleTouchInAbsoluteMode(float y)
+void CSlider::HandleTouchInAbsoluteInteractionMode(float y)
 {
     const auto borderWidth = m_fWidth / 4;
     const auto topBorder = m_fHeight * 10 / 100;
@@ -92,7 +93,7 @@ void CSlider::HandleTouchInAbsoluteMode(float y)
 }
 
 
-void CSlider::HandleTouchInRelativeMode(float cumulativeTranslationX, float deltaY)
+void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY)
 {
     const auto borderWidth = m_fWidth / 4;
     const auto topBorder = m_fHeight * 10 / 100;
@@ -175,28 +176,69 @@ void CSlider::Paint()
     m_d2dDriver->CreateGeometryRect(bgRect, &m_spRectGeometry);
     m_spRT->FillGeometry(m_spRectGeometry, m_d2dDriver->m_spLightGreyBrush);
 
-    const auto borderWidth = m_fWidth / 4;
-    const auto topBorder = m_fHeight * 10 / 100;
-    const auto topEnd = m_fYR + topBorder;
-    const auto bottomPos = m_fYR+m_fHeight;
-    const auto sliderHeight = bottomPos - topEnd;
-    const auto topPos = bottomPos - m_value * sliderHeight;
-
-    const auto fgRect = D2D1::RectF(m_fXR + borderWidth, topPos, m_fXR+m_fWidth - borderWidth, bottomPos);
-    ID2D1RectangleGeometryPtr fgGeometry;
-    m_d2dDriver->CreateGeometryRect(fgRect, &fgGeometry);
-    m_spRT->FillGeometry(fgGeometry,
-      m_mode == MODE_RELATIVE ? m_d2dDriver->m_spCornflowerBrush : m_d2dDriver->m_spSomePinkishBlueBrush);
-
-    wchar_t buf[16];
-    wsprintf(buf, L"%d%%", int(m_value*100));
-    m_d2dDriver->RenderText({m_fXR, m_fYR, m_fXR + m_fWidth, m_fYR + topBorder}, buf, wcslen(buf));
+    switch(m_type) {
+    case TYPE_SLIDER:
+      PaintSlider();
+      break;
+    case TYPE_KNOB:
+      PaintKnob();
+      break;
+    }
 
     // Restore our transform to nothing
     const auto identityMatrix = D2D1::Matrix3x2F::Identity();
     m_spRT->SetTransform(&identityMatrix);
   }
 }
+
+
+void CSlider::PaintSlider()
+{
+  const auto borderWidth = m_fWidth / 4;
+  const auto topBorder = m_fHeight * 10 / 100;
+  const auto topEnd = m_fYR + topBorder;
+  const auto bottomPos = m_fYR+m_fHeight;
+  const auto sliderHeight = bottomPos - topEnd;
+  const auto topPos = bottomPos - m_value * sliderHeight;
+
+  const auto fgRect = D2D1::RectF(m_fXR + borderWidth, topPos, m_fXR+m_fWidth - borderWidth, bottomPos);
+  ID2D1RectangleGeometryPtr fgGeometry;
+  m_d2dDriver->CreateGeometryRect(fgRect, &fgGeometry);
+  m_spRT->FillGeometry(fgGeometry,
+    m_mode == MODE_RELATIVE ? m_d2dDriver->m_spCornflowerBrush : m_d2dDriver->m_spSomePinkishBlueBrush);
+
+  wchar_t buf[16];
+  wsprintf(buf, L"%d%%", int(m_value*100));
+  m_d2dDriver->RenderText({m_fXR, m_fYR, m_fXR + m_fWidth, m_fYR + topBorder}, buf, wcslen(buf));
+}
+
+
+void CSlider::PaintKnob()
+{
+  const auto border = POINTF{m_fWidth / 8, m_fHeight / 8};
+  const auto center = D2D1_POINT_2F{GetCenterX(), GetCenterY()};
+  const auto knobRadius = ::fminf((m_fWidth - border.x)/2, (m_fHeight - border.y)/2);
+
+  D2D1_ELLIPSE knobOutlineParams = {center, knobRadius, knobRadius};
+  ID2D1EllipseGeometryPtr knobOutline;
+  m_d2dDriver->CreateEllipseGeometry(knobOutlineParams, &knobOutline);
+  m_spRT->FillGeometry(knobOutline, m_d2dDriver->m_spDarkGreyBrush);
+
+  const auto dotRadius = 3;
+  const auto knobRelPos = POINTF{0, knobRadius - dotRadius};
+  D2D1_POINT_2F knobRelPosRotated;
+  RotateVector((float*)&knobRelPos, (float*)&knobRelPosRotated, 45 + m_value * 270);
+  D2D1_ELLIPSE knobDotParams = {{center.x + knobRelPosRotated.x, center.y + knobRelPosRotated.y}, dotRadius, dotRadius};
+  ID2D1EllipseGeometryPtr knobDot;
+  m_d2dDriver->CreateEllipseGeometry(knobDotParams, &knobDot);
+  m_spRT->FillGeometry(knobDot,
+    m_mode == MODE_RELATIVE ? m_d2dDriver->m_spCornflowerBrush : m_d2dDriver->m_spSomePinkishBlueBrush);
+
+  wchar_t buf[16];
+  wsprintf(buf, L"%d%%", int(m_value*100));
+  m_d2dDriver->RenderText({center.x - m_fWidth/3, center.y - border.y, center.x + m_fWidth/3, center.y + border.y}, buf, wcslen(buf));
+}
+
 
 void CSlider::Translate(float fdx, float fdy, bool bInertia)
 {

@@ -14,11 +14,11 @@
 
 class CSlider : public CDrawingObject {
 public:
-    enum Mode { MODE_ABSOLUTE, MODE_RELATIVE, NUM_MODES};
+    enum SliderType {TYPE_SLIDER, TYPE_KNOB};
+    enum InteractionMode { MODE_ABSOLUTE, MODE_RELATIVE, NUM_MODES};
 
-    CSlider(HWND hwnd, CD2DDriver* d2dDriver, Mode mode);
+    CSlider(HWND hwnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode);
     ~CSlider() override;
-
     void ManipulationStarted(FLOAT x, FLOAT y) override;
 
     // Handles event when the manipulation is progress
@@ -72,9 +72,12 @@ public:
 
 
 private:
+    void PaintSlider();
+    void PaintKnob();
+
     void HandleTouch(float y, float cumulativeTranslationX, float deltaY);
-    void HandleTouchInAbsoluteMode(float y);
-    void HandleTouchInRelativeMode(float cumulativeTranslationX, float deltaY);
+    void HandleTouchInAbsoluteInteractionMode(float y);
+    void HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY);
 
     void RotateVector(float* vector, float* tVector, float fAngle);
     void ComputeElasticPoint(float fIPt, float* fRPt, int iDimension);
@@ -133,5 +136,6 @@ private:
     int m_iCWidth;
     int m_iCHeight;
 
-    Mode m_mode;
+    InteractionMode m_mode;
+    SliderType m_type;
 };
