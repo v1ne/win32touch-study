@@ -27,6 +27,8 @@ CSlider::~CSlider()
 
 
 void CSlider::ManipulationStarted(FLOAT x, FLOAT y) {
+  m_rawTouchValue = m_value;
+
   if(!gShiftPressed)
     HandleTouch(y, 0.f, 0.f);
 }
@@ -100,8 +102,8 @@ void CSlider::HandleTouchInRelativeMode(float cumulativeTranslationX, float delt
 
     const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * m_fWidth);
 
-    auto newValue = m_value - deltaY / sliderHeight / dragScalingFactor;
-    m_value = ::fmaxf(0, ::fminf(1, newValue));
+    m_rawTouchValue -= deltaY / sliderHeight / dragScalingFactor;
+    m_value = ::fmaxf(0, ::fminf(1, m_rawTouchValue));
 }
 
 

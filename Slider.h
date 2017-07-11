@@ -82,6 +82,7 @@ private:
     void EnsureVisible();
 
     float m_value = 0.0f;
+    float m_rawTouchValue = 0.0f;
 
     HWND m_hWnd;
 
