@@ -23,6 +23,8 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationStarted(
     
     m_coRef->doDrawing->RestoreRealPosition();
 
+    m_coRef->doDrawing->ManipulationStarted(x, y);
+
     return S_OK;
 }
 
@@ -52,20 +54,11 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationDelta(
 
     HRESULT hr = S_OK;
 
-    // Apply transformation based on rotationDelta (in radians)
-    FLOAT rads = 180.0f / 3.14159f;
-    
-    dObj->SetManipulationOrigin(x, y);
+    m_coRef->doDrawing->ManipulationDelta(x, y, translationDeltaX, translationDeltaY,
+      scaleDelta, expansionDelta, rotationDelta, cumulativeTranslationX,
+      cumulativeTranslationY, cumulativeScale, cumulativeExpansion, cumulativeRotation, m_bInertia);
 
-    dObj->Rotate(rotationDelta*rads);
-
-    // Apply translation based on scaleDelta
-    dObj->Scale(scaleDelta);
-
-    // Apply translation based on translationDelta
-    dObj->Translate(translationDeltaX, translationDeltaY, m_bInertia);
-
-    if(!m_bInertia) {
+     if(!m_bInertia) {
         // Set values for one finger rotations
 
         auto fPivotRadius =
@@ -102,13 +95,12 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
     UNREFERENCED_PARAMETER(x);
     UNREFERENCED_PARAMETER(y);
 
-    HRESULT hr = S_OK;
-    
     IInertiaProcessor* ip = m_coRef->inertiaProc;
     IManipulationProcessor* mp = m_coRef->manipulationProc;
 
+    HRESULT hr = S_OK;
     if(!m_bInertia)
-    {    
+    {
         HRESULT hrSI = SetupInertia(ip, mp);
         HRESULT hrCO = S_OK;
 
@@ -127,6 +119,9 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
     else
     {
         m_coRef->bIsInertiaActive = FALSE;
+    
+        m_coRef->doDrawing->ManipulationCompleted(x, y, cumulativeTranslationX,
+          cumulativeTranslationY, cumulativeScale, cumulativeExpansion, cumulativeRotation);
 
         // Stop timer that handles inertia
         KillTimer(m_hWnd, m_iTimerId);

@@ -18,8 +18,36 @@ public:
     CSquare(HWND hwnd, CD2DDriver* d2dDriver);
     ~CSquare() override;
 
-    void ResetState(const float startX, const float startY, 
-        const int ixClient, const int iyClient, 
+    void ManipulationStarted(FLOAT x, FLOAT y) override;
+
+    // Handles event when the manipulation is progress
+    void ManipulationDelta(
+        FLOAT x,
+        FLOAT y,
+        FLOAT translationDeltaX,
+        FLOAT translationDeltaY,
+        FLOAT scaleDelta,
+        FLOAT expansionDelta,
+        FLOAT rotationDelta,
+        FLOAT cumulativeTranslationX,
+        FLOAT cumulativeTranslationY,
+        FLOAT cumulativeScale,
+        FLOAT cumulativeExpansion,
+        FLOAT cumulativeRotation,
+        bool isExtrapolated) override;
+
+    // Handles event when the manipulation ends
+    void ManipulationCompleted(
+        FLOAT x,
+        FLOAT y,
+        FLOAT cumulativeTranslationX,
+        FLOAT cumulativeTranslationY,
+        FLOAT cumulativeScale,
+        FLOAT cumulativeExpansion,
+        FLOAT cumulativeRotation) override;
+
+    void ResetState(const float startX, const float startY,
+        const int ixClient, const int iyClient,
         const int iScaledWidth, const int iScaledHeight,
         const DrawingColor colorChoice);
 
@@ -45,7 +73,7 @@ public:
 private:
     void RotateVector(float* vector, float* tVector, float fAngle);
     void ComputeElasticPoint(float fIPt, float* fRPt, int iDimension);
-    void UpdateBorders(); 
+    void UpdateBorders();
     void EnsureVisible();
 
     HWND m_hWnd;
@@ -56,9 +84,9 @@ private:
     ID2D1HwndRenderTargetPtr	m_spRT;
     ID2D1LinearGradientBrushPtr m_pGlBrush;
     ID2D1LinearGradientBrushPtr m_currBrush;
-    
+
     ID2D1RoundedRectangleGeometryPtr m_spRoundedRectGeometry;
-    
+
     // Keeps the last matrix used to perform the rotate transform
     D2D_MATRIX_3X2_F m_lastMatrix;
 
@@ -69,11 +97,11 @@ private:
     // Internal top, left coordinates of object (Real inertia values)
     float m_fXI;
     float m_fYI;
-    
+
     // Rendered top, left coordinates of object
     float m_fXR;
     float m_fYR;
-    
+
     // Width and height of the object
     float m_fWidth;
     float m_fHeight;

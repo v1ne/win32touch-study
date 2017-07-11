@@ -14,6 +14,34 @@ class CDrawingObject {
 public:
   virtual ~CDrawingObject() {};
 
+  virtual void ManipulationStarted(FLOAT x, FLOAT y) = 0;
+
+  // Handles event when the manipulation is progress
+  virtual void ManipulationDelta(
+      FLOAT x,
+      FLOAT y,
+      FLOAT translationDeltaX,
+      FLOAT translationDeltaY,
+      FLOAT scaleDelta,
+      FLOAT expansionDelta,
+      FLOAT rotationDelta,
+      FLOAT cumulativeTranslationX,
+      FLOAT cumulativeTranslationY,
+      FLOAT cumulativeScale,
+      FLOAT cumulativeExpansion,
+      FLOAT cumulativeRotation,
+      bool isExtrapolated) = 0;
+
+  // Handles event when the manipulation ends
+  virtual void ManipulationCompleted(
+      FLOAT x,
+      FLOAT y,
+      FLOAT cumulativeTranslationX,
+      FLOAT cumulativeTranslationY,
+      FLOAT cumulativeScale,
+      FLOAT cumulativeExpansion,
+      FLOAT cumulativeRotation) = 0;
+    
   virtual void Paint() = 0;
   virtual void Translate(float fdx, float fdy, bool bInertia) = 0;
   virtual void Scale(const float fFactor) = 0;

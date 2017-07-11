@@ -17,6 +17,34 @@ public:
     CSlider(HWND hwnd, CD2DDriver* d2dDriver);
     ~CSlider() override;
 
+    void ManipulationStarted(FLOAT x, FLOAT y) override;
+
+    // Handles event when the manipulation is progress
+    void ManipulationDelta(
+        FLOAT x,
+        FLOAT y,
+        FLOAT translationDeltaX,
+        FLOAT translationDeltaY,
+        FLOAT scaleDelta,
+        FLOAT expansionDelta,
+        FLOAT rotationDelta,
+        FLOAT cumulativeTranslationX,
+        FLOAT cumulativeTranslationY,
+        FLOAT cumulativeScale,
+        FLOAT cumulativeExpansion,
+        FLOAT cumulativeRotation,
+        bool isExtrapolated) override;
+
+    // Handles event when the manipulation ends
+    void ManipulationCompleted(
+        FLOAT x,
+        FLOAT y,
+        FLOAT cumulativeTranslationX,
+        FLOAT cumulativeTranslationY,
+        FLOAT cumulativeScale,
+        FLOAT cumulativeExpansion,
+        FLOAT cumulativeRotation) override;
+
     void ResetState(const float startX, const float startY, 
         const int ixClient, const int iyClient, 
         const int iScaledWidth, const int iScaledHeight);

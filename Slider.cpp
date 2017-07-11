@@ -26,6 +26,34 @@ CSlider::~CSlider()
 }
 
 
+void CSlider::ManipulationStarted(FLOAT x, FLOAT y) {}
+
+
+void CSlider::ManipulationDelta(
+    FLOAT x,
+    FLOAT y,
+    FLOAT translationDeltaX,
+    FLOAT translationDeltaY,
+    FLOAT scaleDelta,
+    FLOAT expansionDelta,
+    FLOAT rotationDelta,
+    FLOAT cumulativeTranslationX,
+    FLOAT cumulativeTranslationY,
+    FLOAT cumulativeScale,
+    FLOAT cumulativeExpansion,
+    FLOAT cumulativeRotation,
+    bool isExtrapolated) {}
+
+void CSlider::ManipulationCompleted(
+    FLOAT x,
+    FLOAT y,
+    FLOAT cumulativeTranslationX,
+    FLOAT cumulativeTranslationY,
+    FLOAT cumulativeScale,
+    FLOAT cumulativeExpansion,
+    FLOAT cumulativeRotation) {}
+
+
 void CSlider::ResetState(const float startX, const float startY, 
   const int ixClient, const int iyClient,
   const int iScaledWidth, const int iScaledHeight)
@@ -120,6 +148,9 @@ void CSlider::Paint()
 
 void CSlider::Translate(float fdx, float fdy, bool bInertia)
 {
+  auto offsetX = m_fOX - fdx;
+
+  return;
   m_fdX = fdx;
   m_fdY = fdy;
 

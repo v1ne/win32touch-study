@@ -19,26 +19,23 @@ class CCoreObject;
 class CManipulationEventSink : _IManipulationEvents
 {
 public:
-    CManipulationEventSink::CManipulationEventSink(HWND hWnd, CCoreObject *coRef, int iTimerId, BOOL inertia, bool canRotate): 
+    CManipulationEventSink::CManipulationEventSink(HWND hWnd, CCoreObject *coRef, int iTimerId, BOOL inertia): 
     m_coRef(coRef), 
     m_hWnd(hWnd), 
     m_iTimerId(iTimerId), 
     m_bInertia(inertia), 
     m_pConnPoint(NULL),
-    m_cRefCount(1),
-    m_bCanRotate(canRotate)
+    m_cRefCount(1)
 {
 }
 
 
    
     // Handles event when the manipulation begins
-    virtual HRESULT STDMETHODCALLTYPE ManipulationStarted(
-        FLOAT x, 
-        FLOAT y);
+    HRESULT STDMETHODCALLTYPE ManipulationStarted(FLOAT x, FLOAT y) override;
 
     // Handles event when the manipulation is progress
-    virtual HRESULT STDMETHODCALLTYPE ManipulationDelta(
+    HRESULT STDMETHODCALLTYPE ManipulationDelta(
         FLOAT x,
         FLOAT y,
         FLOAT translationDeltaX,
@@ -50,17 +47,17 @@ public:
         FLOAT cumulativeTranslationY,
         FLOAT cumulativeScale,
         FLOAT cumulativeExpansion,
-        FLOAT cumulativeRotation);
+        FLOAT cumulativeRotation) override;
 
     // Handles event when the manipulation ends
-    virtual HRESULT STDMETHODCALLTYPE ManipulationCompleted(
+    HRESULT STDMETHODCALLTYPE ManipulationCompleted(
         FLOAT x,
         FLOAT y,
         FLOAT cumulativeTranslationX,
         FLOAT cumulativeTranslationY,
         FLOAT cumulativeScale,
         FLOAT cumulativeExpansion,
-        FLOAT cumulativeRotation);
+        FLOAT cumulativeRotation) override;
     
     // Helper for creating a connection point
     BOOL SetupConnPt(IUnknown* manipulationProc);
@@ -88,8 +85,6 @@ private:
 
     // Flag the determines if this event sink handles inertia
     BOOL m_bInertia;
-
-    bool m_bCanRotate;
 };
 
 #endif

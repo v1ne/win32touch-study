@@ -24,6 +24,42 @@ CSquare::~CSquare()
 {
 }
 
+
+void CSquare::ManipulationStarted(FLOAT x, FLOAT y) {}
+
+
+void CSquare::ManipulationDelta(FLOAT x, FLOAT y,
+    FLOAT translationDeltaX, FLOAT translationDeltaY,
+    FLOAT scaleDelta, FLOAT expansionDelta, FLOAT rotationDelta,
+    FLOAT cumulativeTranslationX, FLOAT cumulativeTranslationY,
+    FLOAT cumulativeScale, FLOAT cumulativeExpansion, FLOAT cumulativeRotation,
+    bool isExtrapolated)
+{
+    FLOAT rads = 180.0f / 3.14159f;
+    
+    SetManipulationOrigin(x, y);
+
+    Rotate(rotationDelta*rads);
+
+    // Apply translation based on scaleDelta
+    Scale(scaleDelta);
+
+    // Apply translation based on translationDelta
+    Translate(translationDeltaX, translationDeltaY, isExtrapolated);
+
+
+}
+
+void CSquare::ManipulationCompleted(
+    FLOAT x,
+    FLOAT y,
+    FLOAT cumulativeTranslationX,
+    FLOAT cumulativeTranslationY,
+    FLOAT cumulativeScale,
+    FLOAT cumulativeExpansion,
+    FLOAT cumulativeRotation) {}
+
+
 // Sets the default position, dimensions and color for the drawing object
 void CSquare::ResetState(const float startX, const float startY, 
                                 const int ixClient, const int iyClient,

@@ -67,7 +67,7 @@ BOOL CCoreObject::Initialize(CDrawingObject* pDrawingObject)
     // and setup connection point to manipulation processor
     if(success)
     {
-        manipulationEventSink = new (std::nothrow) CManipulationEventSink( m_hWnd, this, m_iTimerId, FALSE, m_bCanRotate);
+        manipulationEventSink = new (std::nothrow) CManipulationEventSink(m_hWnd, this, m_iTimerId, FALSE);
         
         if(manipulationEventSink == NULL)
         {
@@ -84,7 +84,7 @@ BOOL CCoreObject::Initialize(CDrawingObject* pDrawingObject)
     // and setup connection point to inertia processor
     if(success)
     {
-        inertiaEventSink = new (std::nothrow) CManipulationEventSink(m_hWnd, this, m_iTimerId, TRUE, m_bCanRotate);
+        inertiaEventSink = new (std::nothrow) CManipulationEventSink(m_hWnd, this, m_iTimerId, TRUE);
 
         if(inertiaEventSink == NULL)
         {
