@@ -43,7 +43,7 @@ HRESULT CD2DDriver::CreateDeviceIndependentResources() {
 
     if (SUCCEEDED(hr)) {
       m_spFormatSmallText->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-      m_spFormatSmallText->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+      m_spFormatSmallText->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
       m_spFormatSmallText->SetReadingDirection(DWRITE_READING_DIRECTION_LEFT_TO_RIGHT);
     }
 
