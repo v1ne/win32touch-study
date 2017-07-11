@@ -157,6 +157,7 @@ HRESULT CD2DDriver::CreateDeviceResources() {
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DarkGray), &m_spDarkGreyBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::CornflowerBlue), &m_spCornflowerBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DimGray), &m_spTextFgBrush);
+        m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::MediumSlateBlue), &m_spSomePinkishBlueBrush);
     }
 
     return hr;
@@ -250,6 +251,7 @@ VOID CD2DDriver::DiscardDeviceResources() {
     m_spLightGreyBrush.Release();
     m_spDarkGreyBrush.Release();
     m_spCornflowerBrush.Release();
+    m_spSomePinkishBlueBrush.Release();
 }	
 
 HRESULT CD2DDriver::CreateRenderTarget() {
@@ -346,24 +348,6 @@ ID2D1LinearGradientBrushPtr CD2DDriver::get_GradBrush(unsigned int uBrushType) {
         return m_spGRBrush;
     }
 }
-
-ID2D1SolidColorBrushPtr CD2DDriver::get_SolidBrush(unsigned int uBrushType) {
-    switch(uBrushType)
-    {
-    case SB_LightGrey:
-        return m_spLightGreyBrush;
-        break;
-    case SB_DarkGrey:
-        return m_spDarkGreyBrush;
-        break;
-    case SB_Cornflower:
-        return m_spCornflowerBrush;
-        break;
-    default:
-        return m_spDarkGreyBrush;
-    }
-}
-
 
 void CD2DDriver::RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len)
 {

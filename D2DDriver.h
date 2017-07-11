@@ -48,8 +48,11 @@ public:
     VOID EndDraw();
 
     enum {GRB_Glossy, GRB_Blue, GRB_Orange, GRB_Red, GRB_Green};
-    enum {SB_LightGrey, SB_DarkGrey, SB_Cornflower};
 
+    ID2D1SolidColorBrushPtr m_spLightGreyBrush;
+    ID2D1SolidColorBrushPtr m_spDarkGreyBrush;
+    ID2D1SolidColorBrushPtr m_spCornflowerBrush;
+    ID2D1SolidColorBrushPtr m_spSomePinkishBlueBrush;
 private:
     // Helper to create gradient resource
     HRESULT CreateGradient(ID2D1GradientStopCollection* pStops, 
@@ -75,9 +78,6 @@ private:
     ID2D1LinearGradientBrushPtr m_spGRBrush;
     ID2D1LinearGradientBrushPtr m_spREBrush;
     ID2D1LinearGradientBrushPtr m_spBGBrush;
-    ID2D1SolidColorBrushPtr m_spLightGreyBrush;
-    ID2D1SolidColorBrushPtr m_spDarkGreyBrush;
-    ID2D1SolidColorBrushPtr m_spCornflowerBrush;
 
     // Solid Brushes
     ID2D1SolidColorBrushPtr m_spTransparentWhiteBrush;

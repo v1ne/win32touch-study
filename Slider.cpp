@@ -13,12 +13,12 @@
 #define DEFAULT_DIRECTION	0
 
 
-CSlider::CSlider(HWND hwnd, CD2DDriver* d2dDriver) :
+CSlider::CSlider(HWND hwnd, CD2DDriver* d2dDriver, Mode mode) :
   m_hWnd(hwnd),
-  m_d2dDriver(d2dDriver)
+  m_spRT(d2dDriver->GetRenderTarget()),
+  m_d2dDriver(d2dDriver),
+  m_mode(mode)
 {
-  // Get the render target for drawing to
-  m_spRT = m_d2dDriver->GetRenderTarget();
 }
 
 CSlider::~CSlider()
@@ -27,8 +27,9 @@ CSlider::~CSlider()
 
 
 void CSlider::ManipulationStarted(FLOAT x, FLOAT y) {
-  HandleSingleTouchContact(y);
+  HandleTouch(y, 0.f, 0.f);
 }
+
 
 void CSlider::ManipulationDelta(
     FLOAT x,
@@ -44,8 +45,9 @@ void CSlider::ManipulationDelta(
     FLOAT cumulativeExpansion,
     FLOAT cumulativeRotation,
     bool isExtrapolated) {
-    HandleSingleTouchContact(y);
+    HandleTouch(y, cumulativeTranslationX, translationDeltaY);
 }
+
 
 void CSlider::ManipulationCompleted(
     FLOAT x,
@@ -55,11 +57,24 @@ void CSlider::ManipulationCompleted(
     FLOAT cumulativeScale,
     FLOAT cumulativeExpansion,
     FLOAT cumulativeRotation) {
-  HandleSingleTouchContact(y);
+  HandleTouch(y, cumulativeTranslationX, 0.f);
 }
 
 
-void CSlider::HandleSingleTouchContact(float y)
+void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY)
+{
+  switch(m_mode) {
+  case MODE_ABSOLUTE:
+    HandleTouchInAbsoluteMode(y);
+    break;
+  case MODE_RELATIVE:
+    HandleTouchInRelativeMode(cumultiveTranslationX, deltaY);
+    break;
+  }
+}
+
+
+void CSlider::HandleTouchInAbsoluteMode(float y)
 {
     const auto borderWidth = m_fWidth / 4;
     const auto topBorder = m_fHeight * 10 / 100;
@@ -67,9 +82,22 @@ void CSlider::HandleSingleTouchContact(float y)
     const auto bottomPos = m_fYR+m_fHeight;
     const auto sliderHeight = bottomPos - topEnd;
 
-    //if (y == GetCenterY()) ::DebugBreak();
+    m_value = ::fmaxf(0, ::fminf(1, (bottomPos - y) / sliderHeight));
+}
 
-    m_value = float(::fmax(0, ::fmin(1, (bottomPos - y) / sliderHeight)));
+
+void CSlider::HandleTouchInRelativeMode(float cumulativeTranslationX, float deltaY)
+{
+    const auto borderWidth = m_fWidth / 4;
+    const auto topBorder = m_fHeight * 10 / 100;
+    const auto topEnd = m_fYR + topBorder;
+    const auto bottomPos = m_fYR+m_fHeight;
+    const auto sliderHeight = bottomPos - topEnd;
+
+    const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * m_fWidth);
+
+    auto newValue = m_value - deltaY / sliderHeight / dragScalingFactor;
+    m_value = ::fmaxf(0, ::fminf(1, newValue));
 }
 
 
@@ -118,9 +146,6 @@ void CSlider::ResetState(const float startX, const float startY,
     m_d2dDriver->DiscardDeviceResources();
     InvalidateRect(m_hWnd, NULL, FALSE);
   }
-
-  m_pBgBrush = m_d2dDriver->get_SolidBrush(CD2DDriver::SB_LightGrey);
-  m_pFgBrush = m_d2dDriver->get_SolidBrush(CD2DDriver::SB_Cornflower);
 }
 
 void CSlider::Paint()
@@ -142,7 +167,7 @@ void CSlider::Paint()
 
     const auto bgRect = D2D1::RectF(m_fXR, m_fYR, m_fXR+m_fWidth, m_fYR+m_fHeight);
     m_d2dDriver->CreateGeometryRect(bgRect, &m_spRectGeometry);
-    m_spRT->FillGeometry(m_spRectGeometry, m_pBgBrush);
+    m_spRT->FillGeometry(m_spRectGeometry, m_d2dDriver->m_spLightGreyBrush);
 
     const auto borderWidth = m_fWidth / 4;
     const auto topBorder = m_fHeight * 10 / 100;
@@ -154,7 +179,8 @@ void CSlider::Paint()
     const auto fgRect = D2D1::RectF(m_fXR + borderWidth, topPos, m_fXR+m_fWidth - borderWidth, bottomPos);
     ID2D1RectangleGeometryPtr fgGeometry;
     m_d2dDriver->CreateGeometryRect(fgRect, &fgGeometry);
-    m_spRT->FillGeometry(fgGeometry, m_pFgBrush);
+    m_spRT->FillGeometry(fgGeometry,
+      m_mode == MODE_RELATIVE ? m_d2dDriver->m_spCornflowerBrush : m_d2dDriver->m_spSomePinkishBlueBrush);
 
     wchar_t buf[16];
     wsprintf(buf, L"%d%%", int(m_value*100));

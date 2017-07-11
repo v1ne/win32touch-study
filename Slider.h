@@ -14,7 +14,9 @@
 
 class CSlider : public CDrawingObject {
 public:
-    CSlider(HWND hwnd, CD2DDriver* d2dDriver);
+    enum Mode { MODE_ABSOLUTE, MODE_RELATIVE, NUM_MODES};
+
+    CSlider(HWND hwnd, CD2DDriver* d2dDriver, Mode mode);
     ~CSlider() override;
 
     void ManipulationStarted(FLOAT x, FLOAT y) override;
@@ -70,7 +72,9 @@ public:
 
 
 private:
-    void HandleSingleTouchContact(float y);
+    void HandleTouch(float y, float cumulativeTranslationX, float deltaY);
+    void HandleTouchInAbsoluteMode(float y);
+    void HandleTouchInRelativeMode(float cumulativeTranslationX, float deltaY);
 
     void RotateVector(float* vector, float* tVector, float fAngle);
     void ComputeElasticPoint(float fIPt, float* fRPt, int iDimension);
@@ -85,8 +89,6 @@ private:
 
     // D2D brushes
     ID2D1HwndRenderTargetPtr	m_spRT;
-    ID2D1SolidColorBrushPtr m_pBgBrush;
-    ID2D1SolidColorBrushPtr m_pFgBrush;
     
     ID2D1RectangleGeometryPtr m_spRectGeometry;
     
@@ -129,4 +131,6 @@ private:
     // Client width and height
     int m_iCWidth;
     int m_iCHeight;
+
+    Mode m_mode;
 };
