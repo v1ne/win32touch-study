@@ -80,7 +80,8 @@ private:
     ID2D1SolidColorBrushPtr m_spCornflowerBrush;
 
     // Solid Brushes
-    ID2D1SolidColorBrushPtr m_spWhiteBrush;
+    ID2D1SolidColorBrushPtr m_spTransparentWhiteBrush;
+    ID2D1SolidColorBrushPtr m_spTextFgBrush;
 
     // Gradient Stops for Gradient Brushes
     ID2D1GradientStopCollection *pGradientStops;

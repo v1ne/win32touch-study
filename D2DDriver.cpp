@@ -73,10 +73,7 @@ HRESULT CD2DDriver::CreateDeviceResources() {
         if(SUCCEEDED(hr))
         {
             // Create white brush
-            hr = m_spRT->CreateSolidColorBrush(
-                D2D1::ColorF(D2D1::ColorF::White),
-                &m_spWhiteBrush
-                );
+            hr = m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &m_spTransparentWhiteBrush);
         }
 
         if(SUCCEEDED(hr))
@@ -159,12 +156,14 @@ HRESULT CD2DDriver::CreateDeviceResources() {
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::LightGray), &m_spLightGreyBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DarkGray), &m_spDarkGreyBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::CornflowerBlue), &m_spCornflowerBrush);
+        m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DimGray), &m_spTextFgBrush);
     }
 
     return hr;
 }
-HRESULT CD2DDriver::RenderBackground(FLOAT clientWidth, FLOAT clientHeight) {
 
+
+HRESULT CD2DDriver::RenderBackground(FLOAT clientWidth, FLOAT clientHeight) {
     m_spBGBrush->SetStartPoint(
         D2D1::Point2F(
             clientWidth/2, 
@@ -190,14 +189,15 @@ HRESULT CD2DDriver::RenderBackground(FLOAT clientWidth, FLOAT clientHeight) {
         m_spBGBrush
         );
 
+#if 0
     // Randomly generate transparent shapes for
     // added effect to the background
-    srand(75);
-    m_spWhiteBrush->SetOpacity(0.015f);
+    m_spTransparentWhiteBrush->SetOpacity(0.015f);
     D2D1_RECT_F square;
     D2D1_ROUNDED_RECT roundedSquare;
     D2D_MATRIX_3X2_F rotateMatrix;
 
+    srand(75);
     for(int i = 0; i < 12; i ++)
     {
         int randomDimension = rand()%500 + 200;
@@ -229,10 +229,11 @@ HRESULT CD2DDriver::RenderBackground(FLOAT clientWidth, FLOAT clientHeight) {
 
         m_spRT->FillRoundedRectangle(
             &roundedSquare,
-            m_spWhiteBrush
+            m_spTransparentWhiteBrush
         );
     }
-    
+#else
+#endif
     return S_OK;
 }
 
@@ -244,7 +245,8 @@ VOID CD2DDriver::DiscardDeviceResources() {
     m_spREBrush.Release();
     m_spGLBrush.Release();
     m_spBGBrush.Release();
-    m_spWhiteBrush.Release();
+    m_spTransparentWhiteBrush.Release();
+    m_spTextFgBrush.Release();
     m_spLightGreyBrush.Release();
     m_spDarkGreyBrush.Release();
     m_spCornflowerBrush.Release();
@@ -365,5 +367,5 @@ ID2D1SolidColorBrushPtr CD2DDriver::get_SolidBrush(unsigned int uBrushType) {
 
 void CD2DDriver::RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len)
 {
-  m_spRT->DrawTextW(buf, UINT32(len), m_spFormatSmallText, rect, m_spBLBrush);
+  m_spRT->DrawTextW(buf, UINT32(len), m_spFormatSmallText, rect, m_spTextFgBrush);
 }
