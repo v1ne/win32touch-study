@@ -27,37 +27,41 @@ CSlider::~CSlider()
 
 
 void CSlider::ManipulationStarted(FLOAT x, FLOAT y) {
-  HandleTouch(y, 0.f, 0.f);
+  if(!gShiftPressed)
+    HandleTouch(y, 0.f, 0.f);
 }
 
 
-void CSlider::ManipulationDelta(
-    FLOAT x,
-    FLOAT y,
-    FLOAT translationDeltaX,
-    FLOAT translationDeltaY,
-    FLOAT scaleDelta,
-    FLOAT expansionDelta,
-    FLOAT rotationDelta,
-    FLOAT cumulativeTranslationX,
-    FLOAT cumulativeTranslationY,
-    FLOAT cumulativeScale,
-    FLOAT cumulativeExpansion,
-    FLOAT cumulativeRotation,
+void CSlider::ManipulationDelta(FLOAT x, FLOAT y,
+    FLOAT translationDeltaX, FLOAT translationDeltaY,
+    FLOAT scaleDelta, FLOAT expansionDelta, FLOAT rotationDelta,
+    FLOAT cumulativeTranslationX, FLOAT cumulativeTranslationY,
+    FLOAT cumulativeScale, FLOAT cumulativeExpansion, FLOAT cumulativeRotation,
     bool isExtrapolated) {
+  if(gShiftPressed) {
+    FLOAT rads = 180.0f / 3.14159f;
+    
+    SetManipulationOrigin(x, y);
+
+    Rotate(rotationDelta*rads);
+
+    // Apply translation based on scaleDelta
+    Scale(scaleDelta);
+
+    // Apply translation based on translationDelta
+    Translate(translationDeltaX, translationDeltaY, isExtrapolated);
+  }
+  else
     HandleTouch(y, cumulativeTranslationX, translationDeltaY);
+
 }
 
 
-void CSlider::ManipulationCompleted(
-    FLOAT x,
-    FLOAT y,
-    FLOAT cumulativeTranslationX,
-    FLOAT cumulativeTranslationY,
-    FLOAT cumulativeScale,
-    FLOAT cumulativeExpansion,
-    FLOAT cumulativeRotation) {
-  HandleTouch(y, cumulativeTranslationX, 0.f);
+void CSlider::ManipulationCompleted(FLOAT x, FLOAT y,
+    FLOAT cumulativeTranslationX, FLOAT cumulativeTranslationY,
+    FLOAT cumulativeScale, FLOAT cumulativeExpansion, FLOAT cumulativeRotation) {
+  if(!gShiftPressed)
+    HandleTouch(y, cumulativeTranslationX, 0.f);
 }
 
 
@@ -194,9 +198,6 @@ void CSlider::Paint()
 
 void CSlider::Translate(float fdx, float fdy, bool bInertia)
 {
-  auto offsetX = m_fOX - fdx;
-
-  return;
   m_fdX = fdx;
   m_fdY = fdy;
 

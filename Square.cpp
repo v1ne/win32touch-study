@@ -46,8 +46,6 @@ void CSquare::ManipulationDelta(FLOAT x, FLOAT y,
 
     // Apply translation based on translationDelta
     Translate(translationDeltaX, translationDeltaY, isExtrapolated);
-
-
 }
 
 void CSquare::ManipulationCompleted(

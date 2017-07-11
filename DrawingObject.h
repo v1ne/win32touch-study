@@ -10,6 +10,8 @@
 #include "D2DDriver.h"
 #include <windows.h>
 
+extern bool gShiftPressed;
+
 class CDrawingObject {
 public:
   virtual ~CDrawingObject() {};

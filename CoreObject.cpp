@@ -10,6 +10,9 @@
 #include <manipulations_i.c>
 #include <new>
 
+
+bool gShiftPressed = false;
+
 CCoreObject::CCoreObject(HWND hwnd, int iTimerId, CD2DDriver* d2dDriver, bool canRotate) : 
     m_hWnd(hwnd), 
     m_iTimerId(iTimerId), 

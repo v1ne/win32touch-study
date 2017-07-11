@@ -256,6 +256,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         g_ctDriver->ProcessChanges();
         break;
       
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+        if (wParam == 0x10)
+          gShiftPressed = msg == WM_KEYDOWN;
+        break;
+
+    case WM_KILLFOCUS:
+        gShiftPressed = false;
+        break;
+
     default:
         return DefWindowProc(hWnd, msg, wParam, lParam);
     }
