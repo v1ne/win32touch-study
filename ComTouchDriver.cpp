@@ -7,7 +7,10 @@
 
 #include "ComTouchDriver.h"
 
+#include "Slider.h"
 #include "Square.h"
+
+#define NUM_SLIDERS 33
 
 CComTouchDriver::CComTouchDriver(HWND hWnd):
     m_hWnd(hWnd), 
@@ -65,7 +68,7 @@ BOOL CComTouchDriver::Initialize()
             
             if(success)
             {
-                success = object->Initialize();
+                success = object->Initialize(new (std::nothrow) CSquare(m_hWnd, m_d2dDriver));
             }
             
             // Append core object to the list
@@ -90,6 +93,13 @@ BOOL CComTouchDriver::Initialize()
                 }
                 break;
             }
+        }
+
+        for (int i = 0; i < NUM_SLIDERS; i++)
+        {
+          auto pObject = new (std::nothrow) CCoreObject(m_hWnd, i, m_d2dDriver, false);
+          pObject->Initialize(new (std::nothrow) CSlider(m_hWnd, m_d2dDriver));
+          m_lCoreObjects.push_front(pObject);
         }
     }
     return success;
@@ -307,34 +317,25 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
     int widthScaled = GetLocalizedPointX(iCWidth);
     int heightScaled = GetLocalizedPointY(iCHeight);
 
-    // Defines default position for objects
-    POINTF pfObjPos[NUM_CORE_OBJECTS];
-    pfObjPos[0].x = widthScaled  / 2.0f-205.0f;
-    pfObjPos[0].y = heightScaled / 2.0f-205.0f;
-    pfObjPos[1].x = widthScaled  / 2.0f+5.0f;
-    pfObjPos[1].y = heightScaled / 2.0f-205.0f;
-    pfObjPos[2].x = widthScaled  / 2.0f-205.0f;
-    pfObjPos[2].y = heightScaled / 2.0f+5.0f;
-    pfObjPos[3].x = widthScaled  / 2.0f+5.0f;
-    pfObjPos[3].y = heightScaled / 2.0f+5.0f;
-    
-    // Defines color for objects
-    CSquare::DrawingColor uObjColor[NUM_CORE_OBJECTS];
-    uObjColor[0] = CSquare::Red;
-    uObjColor[1] = CSquare::Green;
-    uObjColor[2] = CSquare::Blue;
-    uObjColor[3] = CSquare::Orange;
-
-
-    // Assign the setup defined above to each of the core objects
-    int i = 0;
-    for(const auto pObject : m_lCoreObjects)
-    {
-        ((CSquare*)pObject->doDrawing)->ResetState(pfObjPos[i].x, pfObjPos[i].y, iCWidth, iCHeight, widthScaled, heightScaled, uObjColor[i]);
-        i++;
+    const float squareDistance = 205;
+    const auto numSquareColumns = int(sqrt(NUM_CORE_OBJECTS));
+    auto iObject = m_lCoreObjects.rbegin();
+    for(int i = 0; i < NUM_CORE_OBJECTS; i++) {
+      const auto pos = POINTF{widthScaled - squareDistance * (i % numSquareColumns + 1), heightScaled - squareDistance * (i / numSquareColumns + 1)};
+      ((CSquare*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, CSquare::DrawingColor(i % 4));
+      ++iObject;
     }
 
-    RenderObjects();
+    const auto sliderBorder = 5;
+    const auto sliderDistance = POINTF{50 + sliderBorder, 200 + sliderBorder};
+    const auto numSliderColumns = int(sqrt(NUM_SLIDERS * sliderDistance.y / sliderDistance.x));
+    for(int i = 0; i < NUM_SLIDERS; i++) {
+      const auto pos = POINTF{sliderBorder + sliderDistance.x * (i % numSliderColumns), sliderBorder + sliderDistance.y * (i / numSliderColumns)};
+      ((CSlider*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled);
+      ++iObject;
+    }
+
+RenderObjects();
 }
 
 int CComTouchDriver::GetLocalizedPointX(int ptX)

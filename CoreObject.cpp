@@ -21,7 +21,7 @@ CCoreObject::CCoreObject(HWND hwnd, int iTimerId, CD2DDriver* d2dDriver, bool ca
 {
 }
 
-BOOL CCoreObject::Initialize()
+BOOL CCoreObject::Initialize(CDrawingObject* pDrawingObject)
 {   
     BOOL success = SUCCEEDED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED));
 
@@ -55,7 +55,7 @@ BOOL CCoreObject::Initialize()
             manipulationProc->put_SupportedManipulations(manipulations);
         }
 
-        doDrawing = new (std::nothrow) CSquare(m_hWnd, m_d2dDriver);
+        doDrawing = pDrawingObject;
 
         if(doDrawing == NULL)
         {

@@ -15,7 +15,7 @@ class CCoreObject {
 public:
     CCoreObject(HWND hwnd, int iTimerId, CD2DDriver* d2dDriver, bool canRotate);
     ~CCoreObject();
-    BOOL Initialize();
+    BOOL Initialize(CDrawingObject* pDrawingObject);
 
     // Rendered object
     CDrawingObject* doDrawing;

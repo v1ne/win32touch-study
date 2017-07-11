@@ -35,14 +35,17 @@ public:
     VOID DiscardDeviceResources();
     
     HRESULT CreateGeometryRoundedRect(D2D1_ROUNDED_RECT rect, ID2D1RoundedRectangleGeometry** spRoundedRectGeometry);
+    HRESULT CreateGeometryRect(D2D1_RECT_F rect, ID2D1RectangleGeometry** spRectGeometry);
     HRESULT RenderBackground(FLOAT clientWidth, FLOAT clientHeight);
     ID2D1HwndRenderTargetPtr GetRenderTarget();
     ID2D1LinearGradientBrushPtr get_GradBrush(unsigned int uBrushType);
+    ID2D1SolidColorBrushPtr get_SolidBrush(unsigned int uBrushType);
 
     VOID BeginDraw();
     VOID EndDraw();
 
     enum {GRB_Glossy, GRB_Blue, GRB_Orange, GRB_Red, GRB_Green};
+    enum {SB_LightGrey, SB_DarkGrey, SB_Cornflower};
 
 private:
     // Helper to create gradient resource
@@ -71,6 +74,9 @@ private:
     ID2D1LinearGradientBrushPtr m_spGRBrush;
     ID2D1LinearGradientBrushPtr m_spREBrush;
     ID2D1LinearGradientBrushPtr m_spBGBrush;
+    ID2D1SolidColorBrushPtr m_spLightGreyBrush;
+    ID2D1SolidColorBrushPtr m_spDarkGreyBrush;
+    ID2D1SolidColorBrushPtr m_spCornflowerBrush;
 
     // Solid Brushes
     ID2D1SolidColorBrushPtr m_spWhiteBrush;

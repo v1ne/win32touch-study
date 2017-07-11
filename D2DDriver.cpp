@@ -44,6 +44,10 @@ HRESULT CD2DDriver::CreateGeometryRoundedRect(D2D1_ROUNDED_RECT rect,
     return hr;
 }
 
+HRESULT CD2DDriver::CreateGeometryRect(D2D1_RECT_F rect, ID2D1RectangleGeometry** spRectGeometry) {
+  return m_spD2DFactory->CreateRectangleGeometry(rect, spRectGeometry);
+}
+
 HRESULT CD2DDriver::CreateDeviceResources() {
     HRESULT hr = S_OK;
 
@@ -136,6 +140,10 @@ HRESULT CD2DDriver::CreateDeviceResources() {
                 1.0f, 
                 0.0f);
         }
+
+        m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::LightGray), &m_spLightGreyBrush);
+        m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DarkGray), &m_spDarkGreyBrush);
+        m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::CornflowerBlue), &m_spCornflowerBrush);
     }
 
     return hr;
@@ -222,6 +230,9 @@ VOID CD2DDriver::DiscardDeviceResources() {
     m_spGLBrush.Release();
     m_spBGBrush.Release();
     m_spWhiteBrush.Release();
+    m_spLightGreyBrush.Release();
+    m_spDarkGreyBrush.Release();
+    m_spCornflowerBrush.Release();
 }	
 
 HRESULT CD2DDriver::CreateRenderTarget() {
@@ -291,6 +302,7 @@ HRESULT CD2DDriver::CreateGradient(ID2D1GradientStopCollection* pStops,
     return hr;
 }
 
+
 ID2D1HwndRenderTargetPtr CD2DDriver::GetRenderTarget() {
     return m_spRT;
 }
@@ -317,3 +329,21 @@ ID2D1LinearGradientBrushPtr CD2DDriver::get_GradBrush(unsigned int uBrushType) {
         return m_spGRBrush;
     }
 }
+
+ID2D1SolidColorBrushPtr CD2DDriver::get_SolidBrush(unsigned int uBrushType) {
+    switch(uBrushType)
+    {
+    case SB_LightGrey:
+        return m_spLightGreyBrush;
+        break;
+    case SB_DarkGrey:
+        return m_spDarkGreyBrush;
+        break;
+    case SB_Cornflower:
+        return m_spCornflowerBrush;
+        break;
+    default:
+        return m_spDarkGreyBrush;
+    }
+}
+ 

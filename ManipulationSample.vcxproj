@@ -190,6 +190,7 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level4</WarningLevel>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</TreatWarningAsError>
     </ClCompile>
+    <ClCompile Include="Slider.cpp" />
     <ClCompile Include="Square.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -199,6 +200,7 @@
     <ClInclude Include="DrawingObject.h" />
     <ClInclude Include="ManipulationEventsink.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="Slider.h" />
     <ClInclude Include="Square.h" />
   </ItemGroup>
   <ItemGroup>
