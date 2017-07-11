@@ -8,18 +8,19 @@
 #ifndef D2DDRIVER_H
 #define D2DDRIVER_H
 
-// D2D
 #include <d2d1.h>
 #include <d2d1helper.h>	
+#include <dwrite.h>	
 #include <comdef.h>
 
-// D2D Smart Pointers
 _COM_SMARTPTR_TYPEDEF(ID2D1Factory, __uuidof(ID2D1Factory));
 _COM_SMARTPTR_TYPEDEF(ID2D1HwndRenderTarget, __uuidof(ID2D1HwndRenderTarget));
 _COM_SMARTPTR_TYPEDEF(ID2D1LinearGradientBrush, __uuidof(ID2D1LinearGradientBrush));
 _COM_SMARTPTR_TYPEDEF(ID2D1SolidColorBrush, __uuidof(ID2D1SolidColorBrush));
 _COM_SMARTPTR_TYPEDEF(ID2D1RectangleGeometry, __uuidof(ID2D1RectangleGeometry));
 _COM_SMARTPTR_TYPEDEF(ID2D1RoundedRectangleGeometry, __uuidof(ID2D1RoundedRectangleGeometry));
+_COM_SMARTPTR_TYPEDEF(IDWriteFactory, __uuidof(IDWriteFactory));
+_COM_SMARTPTR_TYPEDEF(IDWriteTextFormat, __uuidof(IDWriteTextFormat));
 
 class CD2DDriver {
 public:
@@ -41,6 +42,8 @@ public:
     ID2D1LinearGradientBrushPtr get_GradBrush(unsigned int uBrushType);
     ID2D1SolidColorBrushPtr get_SolidBrush(unsigned int uBrushType);
 
+    void RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len);
+
     VOID BeginDraw();
     VOID EndDraw();
 
@@ -61,10 +64,8 @@ private:
     // Handle to the main window
     HWND m_hWnd;
 
-    // D2D Factory
     ID2D1FactoryPtr m_spD2DFactory;
-
-    // D2D Render Target
+    IDWriteFactoryPtr m_spDWriteFactory;
     ID2D1HwndRenderTargetPtr m_spRT;
 
     // Gradient Brushes
@@ -89,5 +90,6 @@ private:
     ID2D1GradientStopCollection *pGradientStops5;
     ID2D1GradientStopCollection *pGlossyStops;
 
+    IDWriteTextFormatPtr m_spFormatSmallText;
 };
 #endif

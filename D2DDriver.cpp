@@ -4,12 +4,13 @@
 // PARTICULAR PURPOSE.
 //
 // Copyright (c) Microsoft Corporation. All rights reserved
+// Copyright (c) v1ne
+// Copyright (c) uucidl
 
 #include "D2DDriver.h"
 
 CD2DDriver::CD2DDriver(HWND hwnd):
     m_hWnd(hwnd) {
-
 }
 
 CD2DDriver::~CD2DDriver() {
@@ -28,9 +29,23 @@ HRESULT CD2DDriver::Initialize() {
 }
 
 HRESULT CD2DDriver::CreateDeviceIndependentResources() {
-    // Create D2D factory
-    HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,
-        &m_spD2DFactory);
+    HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_spD2DFactory);
+    hr = SUCCEEDED(hr) ? DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&m_spDWriteFactory)) : hr;
+    hr = SUCCEEDED(hr) ? m_spDWriteFactory->CreateTextFormat(
+            /* font name */ L"Calibri",
+            nullptr,
+            DWRITE_FONT_WEIGHT_NORMAL,
+            DWRITE_FONT_STYLE_NORMAL,
+            DWRITE_FONT_STRETCH_NORMAL,
+            /* font size */ 12,
+            /* locale */ L"",
+            &m_spFormatSmallText) : hr;
+
+    if (SUCCEEDED(hr)) {
+      m_spFormatSmallText->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+      m_spFormatSmallText->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+      m_spFormatSmallText->SetReadingDirection(DWRITE_READING_DIRECTION_LEFT_TO_RIGHT);
+    }
 
     return hr;
 }
@@ -346,4 +361,9 @@ ID2D1SolidColorBrushPtr CD2DDriver::get_SolidBrush(unsigned int uBrushType) {
         return m_spDarkGreyBrush;
     }
 }
- 
+
+
+void CD2DDriver::RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len)
+{
+  m_spRT->DrawTextW(buf, UINT32(len), m_spFormatSmallText, rect, m_spBLBrush);
+}

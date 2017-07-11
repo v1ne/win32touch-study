@@ -108,6 +108,10 @@ void CSlider::Paint()
     m_d2dDriver->CreateGeometryRect(fgRect, &fgGeometry);
     m_spRT->FillGeometry(fgGeometry, m_pFgBrush);
 
+    wchar_t buf[16];
+    wsprintf(buf, L"%d%%", int(m_value*100));
+    m_d2dDriver->RenderText({m_fXR, m_fYR, m_fXR + m_fWidth, m_fYR + topBorder}, buf, wcslen(buf));
+
     // Restore our transform to nothing
     const auto identityMatrix = D2D1::Matrix3x2F::Identity();
     m_spRT->SetTransform(&identityMatrix);
