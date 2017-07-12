@@ -40,7 +40,7 @@ void CTransformableDrawingObject::Translate(Point2F delta, bool bInertia)
   auto v1 = Center() - Offset;
   if(m_fAngleApplied != 0.0f)
   {
-    auto v2 = rotateDeg(v1, m_fAngleApplied);
+    auto v2 = rotateDeg(v1, -m_fAngleApplied);
     delta += v2 - v1;
   }
 
