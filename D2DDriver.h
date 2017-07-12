@@ -8,6 +8,8 @@
 #ifndef D2DDRIVER_H
 #define D2DDRIVER_H
 
+#include "Geometry.h"
+
 #include <d2d1.h>
 #include <d2d1helper.h>	
 #include <dwrite.h>	
@@ -20,6 +22,7 @@ _COM_SMARTPTR_TYPEDEF(ID2D1SolidColorBrush, __uuidof(ID2D1SolidColorBrush));
 _COM_SMARTPTR_TYPEDEF(ID2D1RectangleGeometry, __uuidof(ID2D1RectangleGeometry));
 _COM_SMARTPTR_TYPEDEF(ID2D1RoundedRectangleGeometry, __uuidof(ID2D1RoundedRectangleGeometry));
 _COM_SMARTPTR_TYPEDEF(ID2D1EllipseGeometry, __uuidof(ID2D1EllipseGeometry));
+_COM_SMARTPTR_TYPEDEF(ID2D1PathGeometry, __uuidof(ID2D1PathGeometry));
 _COM_SMARTPTR_TYPEDEF(IDWriteFactory, __uuidof(IDWriteFactory));
 _COM_SMARTPTR_TYPEDEF(IDWriteTextFormat, __uuidof(IDWriteTextFormat));
 
@@ -36,20 +39,21 @@ public:
     HRESULT CreateDeviceResources();
     VOID DiscardDeviceResources();
     
-    HRESULT CreateGeometryRoundedRect(const D2D1_ROUNDED_RECT& rect, ID2D1RoundedRectangleGeometry** spRoundedRectGeometry);
-    HRESULT CreateGeometryRect(const D2D1_RECT_F& rect, ID2D1RectangleGeometry** spRectGeometry);
-    HRESULT CreateEllipseGeometry(const D2D1_ELLIPSE& params, ID2D1EllipseGeometry** spEllipseGeometry);
     HRESULT RenderBackground(FLOAT clientWidth, FLOAT clientHeight);
     ID2D1HwndRenderTargetPtr GetRenderTarget();
     ID2D1LinearGradientBrushPtr get_GradBrush(unsigned int uBrushType);
 
     void RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len);
+    void RenderTiltedRect(Point2F basePos, float distance, float degAngle, Point2F size, ID2D1Brush* pBrush);
 
     VOID BeginDraw();
     VOID EndDraw();
 
     enum {GRB_Glossy, GRB_Blue, GRB_Orange, GRB_Red, GRB_Green};
 
+    ID2D1FactoryPtr m_spD2DFactory;
+
+    ID2D1SolidColorBrushPtr m_spBlackBrush;
     ID2D1SolidColorBrushPtr m_spLightGreyBrush;
     ID2D1SolidColorBrushPtr m_spDarkGreyBrush;
     ID2D1SolidColorBrushPtr m_spCornflowerBrush;
@@ -68,7 +72,6 @@ private:
     // Handle to the main window
     HWND m_hWnd;
 
-    ID2D1FactoryPtr m_spD2DFactory;
     IDWriteFactoryPtr m_spDWriteFactory;
     ID2D1HwndRenderTargetPtr m_spRT;
 

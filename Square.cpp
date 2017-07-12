@@ -134,7 +134,7 @@ void CSquare::Paint()
         );
 
         // D2D requires that a geometry is created for the rectangle
-        m_d2dDriver->CreateGeometryRoundedRect(
+        m_d2dDriver->m_spD2DFactory->CreateRoundedRectangleGeometry(
             roundedRect,
             &m_spRoundedRectGeometry
         );

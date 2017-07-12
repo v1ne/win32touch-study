@@ -50,25 +50,6 @@ HRESULT CD2DDriver::CreateDeviceIndependentResources() {
     return hr;
 }
 
-HRESULT CD2DDriver::CreateGeometryRoundedRect(const D2D1_ROUNDED_RECT& rect, 
-                                              ID2D1RoundedRectangleGeometry** spRoundedRectGeometry) {
-    HRESULT hr = m_spD2DFactory->CreateRoundedRectangleGeometry(
-        rect, 
-        spRoundedRectGeometry );
-
-    return hr;
-}
-
-HRESULT CD2DDriver::CreateGeometryRect(const D2D1_RECT_F& rect, ID2D1RectangleGeometry** spRectGeometry) {
-  return m_spD2DFactory->CreateRectangleGeometry(rect, spRectGeometry);
-}
-
-
-HRESULT CD2DDriver::CreateEllipseGeometry(const D2D1_ELLIPSE& params, ID2D1EllipseGeometry** spEllipseGeometry) {
-  return m_spD2DFactory->CreateEllipseGeometry(params, spEllipseGeometry);
-}
-
-
 HRESULT CD2DDriver::CreateDeviceResources() {
     HRESULT hr = S_OK;
 
@@ -164,6 +145,7 @@ HRESULT CD2DDriver::CreateDeviceResources() {
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::CornflowerBlue), &m_spCornflowerBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DimGray), &m_spTextFgBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::MediumSlateBlue), &m_spSomePinkishBlueBrush);
+        m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::Black), &m_spBlackBrush);
     }
 
     return hr;
@@ -258,6 +240,7 @@ VOID CD2DDriver::DiscardDeviceResources() {
     m_spDarkGreyBrush.Release();
     m_spCornflowerBrush.Release();
     m_spSomePinkishBlueBrush.Release();
+    m_spBlackBrush.Release();
 }	
 
 HRESULT CD2DDriver::CreateRenderTarget() {
@@ -358,4 +341,37 @@ ID2D1LinearGradientBrushPtr CD2DDriver::get_GradBrush(unsigned int uBrushType) {
 void CD2DDriver::RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len)
 {
   m_spRT->DrawTextW(buf, UINT32(len), m_spFormatSmallText, rect, m_spTextFgBrush);
+}
+
+
+void CD2DDriver::RenderTiltedRect(Point2F base, float distance, float degAngle, Point2F size, ID2D1Brush* pBrush)
+{
+  const auto middleOfRectNearBase = base + rotateDeg({distance, 0.f}, degAngle);
+  const auto halfRectHeightR = rotateDeg(Point2F{0.f, size.y/2}, degAngle);
+  const auto rectLengthR = rotateDeg(Point2F{size.x, 0.f}, degAngle);
+  const auto p1 = middleOfRectNearBase + halfRectHeightR;
+  const auto p2 = middleOfRectNearBase - halfRectHeightR;
+  const auto p3 = p2 + rectLengthR;
+  const auto p4 = p1 + rectLengthR;
+  const D2D1_POINT_2F d2dPoints[4] =
+    {p2.to<D2D1_POINT_2F>(), p3.to<D2D1_POINT_2F>(), p4.to<D2D1_POINT_2F>(), p1.to<D2D1_POINT_2F>()};
+
+  ID2D1PathGeometryPtr pathGeometry;
+  auto hr = m_spD2DFactory->CreatePathGeometry(&pathGeometry);
+  if (!SUCCEEDED(hr))
+  {
+    return;
+  }
+
+  ID2D1GeometrySink *pSink = NULL;
+  hr = pathGeometry->Open(&pSink);
+  if (SUCCEEDED(hr))
+  {
+    pSink->SetFillMode(D2D1_FILL_MODE_WINDING);
+    pSink->BeginFigure(p1.to<D2D_POINT_2F>(), D2D1_FIGURE_BEGIN_FILLED);
+    pSink->AddLines(d2dPoints, 4);
+    pSink->EndFigure(D2D1_FIGURE_END_CLOSED);
+    hr = pSink->Close();
+    m_spRT->FillGeometry(pathGeometry, pBrush);
+  }
 }

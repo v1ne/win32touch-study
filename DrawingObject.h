@@ -12,7 +12,9 @@
 #include "Geometry.h"
 #include <windows.h>
 
+
 extern bool gShiftPressed;
+
 
 class CDrawingObject {
 public:

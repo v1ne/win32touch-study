@@ -11,30 +11,81 @@
 #include <math.h>
 
 
-class DialOnALeash: public CDrawingObject {
+class DialOnALeash: public CTransformableDrawingObject {
 public:
+  DialOnALeash::DialOnALeash(HWND hWnd, CD2DDriver* d2dDriver)
+    : CTransformableDrawingObject(hWnd, d2dDriver) {}
   ~DialOnALeash() override {};
 
   void ManipulationStarted(Point2F) override {}
 
-  // Handles event when the manipulation is progress
   void ManipulationDelta(Point2F pos, Point2F dTranslation,
-      float dScale, float dExtension, float dRotation,
-      Point2F sumTranslation, float sumScale, float sumExpansion, float sumRotation,
+    float dScale, float dExtension, float dRotation,
+    Point2F sumTranslation, float sumScale, float sumExpansion, float sumRotation,
       bool isExtrapolated) override {}
 
-  // Handles event when the manipulation ends
-  void ManipulationCompleted(
-      float x,
-      float y,
-      float cumulativeTranslationX,
-      float cumulativeTranslationY,
-      float cumulativeScale,
-      float cumulativeExpansion,
-      float cumulativeRotation) {}
-    
-  void Paint() override {}
-  bool InRegion(Point2F pos) override {return false; }
+  void ManipulationCompleted(Point2F pos, Point2F sumTranslation,
+    float sumScale, float sumExpansion, float sumRotation) {}
+
+  void Paint() override {
+    const auto radius = 300.f;
+    D2D1_ELLIPSE background = {Center().to<D2D1_POINT_2F>(), radius, radius};
+    m_d2dDriver->m_spD2DFactory->CreateEllipseGeometry(background, &mBackground);
+    m_spRT->FillGeometry(mBackground, m_d2dDriver->m_spSomePinkishBlueBrush);
+
+    ID2D1PathGeometryPtr pathGeometry;
+    auto hr = m_d2dDriver->m_spD2DFactory->CreatePathGeometry(&pathGeometry);
+    if (!SUCCEEDED(hr)) {
+      return;
+    }
+
+    ID2D1GeometrySink *pSink = NULL;
+    hr = pathGeometry->Open(&pSink);
+    if (SUCCEEDED(hr)) {
+      pSink->SetFillMode(D2D1_FILL_MODE_WINDING);
+
+      pSink->BeginFigure(
+        D2D1::Point2F(100, 300), // Start point of the top half circle
+        D2D1_FIGURE_BEGIN_FILLED
+        );
+
+      // Add the top half circle
+      pSink->AddArc(
+        D2D1::ArcSegment(
+        D2D1::Point2F(400, 300), // end point of the top half circle, also the start point of the bottom half circle
+        D2D1::SizeF(150, 150), // radius
+        0.0f, // rotation angle
+        D2D1_SWEEP_DIRECTION_CLOCKWISE,
+        D2D1_ARC_SIZE_SMALL
+        ));
+
+      // Add the bottom half circle
+      pSink->AddArc(
+        D2D1::ArcSegment(
+        D2D1::Point2F(100, 300), // end point of the bottom half circle
+        D2D1::SizeF(150, 150),   // radius of the bottom half circle, same as previous one.
+        0.0f, // rotation angle
+        D2D1_SWEEP_DIRECTION_CLOCKWISE,
+        D2D1_ARC_SIZE_SMALL
+        ));
+
+      pSink->EndFigure(D2D1_FIGURE_END_CLOSED);
+    }
+    hr = pSink->Close();
+    m_spRT->FillGeometry(pathGeometry, m_d2dDriver->m_spSomePinkishBlueBrush);
+
+    for(int i = 0; i < 360; i += 30) {
+      m_d2dDriver->RenderTiltedRect({300, 300}, 50, float(i), {10.f, 1.f}, m_d2dDriver->m_spDarkGreyBrush);
+    }
+  }
+
+  bool InRegion(Point2F pos) override {
+    BOOL b = FALSE;
+    mBackground->FillContainsPoint(pos.to<D2D1_POINT_2F>(), &m_lastMatrix, &b);
+    return b;
+  }
+
+  ID2D1EllipseGeometryPtr mBackground;
 };
 
 CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode)
@@ -130,7 +181,7 @@ void CSlider::Paint()
     m_lastMatrix = rotateMatrix;
 
     const auto bgRect = D2D1::RectF(mRenderPos.x, mRenderPos.y, mRenderPos.x+mSize.x, mRenderPos.y+mSize.y);
-    m_d2dDriver->CreateGeometryRect(bgRect, &m_spRectGeometry);
+    m_d2dDriver->m_spD2DFactory->CreateRectangleGeometry(bgRect, &m_spRectGeometry);
     m_spRT->FillGeometry(m_spRectGeometry, m_d2dDriver->m_spLightGreyBrush);
 
     switch(m_type) {
@@ -163,13 +214,15 @@ void CSlider::PaintSlider()
 
   const auto fgRect = D2D1::RectF(mRenderPos.x + borderWidth, topPos, mRenderPos.x+mSize.x - borderWidth, bottomPos);
   ID2D1RectangleGeometryPtr fgGeometry;
-  m_d2dDriver->CreateGeometryRect(fgRect, &fgGeometry);
+  m_d2dDriver->m_spD2DFactory->CreateRectangleGeometry(fgRect, &fgGeometry);
   m_spRT->FillGeometry(fgGeometry,
     m_mode == MODE_RELATIVE ? m_d2dDriver->m_spCornflowerBrush : m_d2dDriver->m_spSomePinkishBlueBrush);
 
   wchar_t buf[16];
   wsprintf(buf, L"%d%%", int(m_value*100));
   m_d2dDriver->RenderText({mRenderPos.x, mRenderPos.y, mRenderPos.x + mSize.x, mRenderPos.y + topBorder}, buf, wcslen(buf));
+
+  DialOnALeash(m_hWnd, m_d2dDriver).Paint();
 }
 
 
@@ -184,17 +237,16 @@ void CSlider::PaintKnob()
 
   D2D1_ELLIPSE knobOutlineParams = {center, knobRadius, knobRadius};
   ID2D1EllipseGeometryPtr knobOutline;
-  m_d2dDriver->CreateEllipseGeometry(knobOutlineParams, &knobOutline);
+  m_d2dDriver->m_spD2DFactory->CreateEllipseGeometry(knobOutlineParams, &knobOutline);
   m_spRT->FillGeometry(knobOutline, m_d2dDriver->m_spDarkGreyBrush);
 
-  const auto dotRadius = 3;
-  const auto knobRelPos = Point2F{0, knobRadius - dotRadius};
-  const auto knobRelPosRotated = rotateDeg(knobRelPos, 45 + m_value * 270);
-  D2D1_ELLIPSE knobDotParams = {{center.x + knobRelPosRotated.x, center.y + knobRelPosRotated.y}, dotRadius, dotRadius};
-  ID2D1EllipseGeometryPtr knobDot;
-  m_d2dDriver->CreateEllipseGeometry(knobDotParams, &knobDot);
-  m_spRT->FillGeometry(knobDot,
+  const auto knobMarkAngle = -135.f - m_value * 270;
+  const auto markSize = Point2F{10.f, 5.f};
+  m_d2dDriver->RenderTiltedRect(Center(), knobRadius - markSize.x, knobMarkAngle, markSize,
     m_mode == MODE_RELATIVE ? m_d2dDriver->m_spCornflowerBrush : m_d2dDriver->m_spSomePinkishBlueBrush);
+  for(int i = 0; i <= 270; i += 30) {
+    m_d2dDriver->RenderTiltedRect(Center(), knobRadius, float(-135 - i), {3.f, 1.f}, m_d2dDriver->m_spBlackBrush);
+  }
 
   wchar_t buf[16];
   wsprintf(buf, L"%d%%", int(m_value*100));
