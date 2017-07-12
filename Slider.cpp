@@ -63,7 +63,7 @@ public:
   }
 
   bool InRegion(Point2F pos) override {
-    if (!mIsShown) return false;
+    if (!mIsShown || !mBackground) return false;
 
     BOOL b = FALSE;
     mBackground->FillContainsPoint(pos.to<D2D1_POINT_2F>(), &m_lastMatrix, &b);
@@ -112,12 +112,13 @@ void CSlider::ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
     Scale(params.dScale);
     Translate(params.dTranslation, params.isExtrapolated);
   } else {
-    if (mpDial && !InRegion(params.pos))
-      mpDial->mIsShown = true;
-
-    if (mpDial && mpDial->InRegion(params.pos))
+    if(mpDial) {
       mpDial->ManipulationDelta(params);
-    else
+
+      if (!InRegion(params.pos)) mpDial->mIsShown = true;
+    }
+
+    if (!mpDial || !mpDial->InRegion(params.pos))
       HandleTouch(params.pos.y, params.sumTranslation.x, params.dTranslation.y);
   }
 }
