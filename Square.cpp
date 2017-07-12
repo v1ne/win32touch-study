@@ -48,22 +48,18 @@ void CSquare::ManipulationStarted(Point2F)
 }
 
 
-void CSquare::ManipulationDelta(Point2F pos, Point2F dTranslation,
-    float dScale, float dExtension, float dRotation,
-    Point2F sumTranslation, float sumScale, float sumExpansion, float sumRotation,
-    bool isExtrapolated)
+void CSquare::ManipulationDelta(CDrawingObject::ManipDeltaParams params)
 {
     float rads = 180.0f / 3.14159f;
 
-    SetManipulationOrigin(pos);
+    SetManipulationOrigin(params.pos);
 
-    Rotate(dRotation*rads);
-    Scale(dScale);
-    Translate(dTranslation, isExtrapolated);
+    Rotate(params.dRotation * rads);
+    Scale(params.dScale);
+    Translate(params.dTranslation, params.isExtrapolated);
 }
 
-void CSquare::ManipulationCompleted(Point2F pos, Point2F sumTranslation,
-    float sumScale, float sumExpansion, float sumRotation)
+void CSquare::ManipulationCompleted(CDrawingObject::ManipCompletedParams)
 {
 }
 

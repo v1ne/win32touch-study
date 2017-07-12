@@ -19,7 +19,7 @@ class CCoreObject;
 class CManipulationEventSink : _IManipulationEvents
 {
 public:
-    CManipulationEventSink::CManipulationEventSink(HWND hWnd, CCoreObject *coRef, int iTimerId, BOOL inertia): 
+    CManipulationEventSink::CManipulationEventSink(HWND hWnd, CCoreObject *coRef, int iTimerId, bool inertia): 
     m_coRef(coRef), 
     m_hWnd(hWnd), 
     m_iTimerId(iTimerId), 
@@ -84,7 +84,7 @@ private:
     int m_iTimerId;
 
     // Flag the determines if this event sink handles inertia
-    BOOL m_bInertia;
+    bool m_bInertia;
 };
 
 #endif

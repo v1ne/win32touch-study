@@ -21,12 +21,8 @@ public:
     ~CSlider() override;
 
     void ManipulationStarted(Point2F Po) override;
-    void ManipulationDelta(Point2F pos, Point2F dTranslation,
-      float dScale, float dExtension, float dRotation,
-      Point2F sumTranslation, float sumScale, float sumExpansion, float sumRotation,
-      bool isExtrapolated) override;
-    void ManipulationCompleted(Point2F pos, Point2F sumTranslation,
-      float sumScale, float sumExpansion, float sumRotation) override;
+    void ManipulationDelta(CDrawingObject::ManipDeltaParams) override;
+    void ManipulationCompleted(CDrawingObject::ManipCompletedParams) override;
 
     void Paint() override;
     bool InRegion(Point2F pos) override;

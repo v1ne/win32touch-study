@@ -52,11 +52,11 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationDelta(
 
     HRESULT hr = S_OK;
 
-    m_coRef->doDrawing->ManipulationDelta({x, y},
+    m_coRef->doDrawing->ManipulationDelta({{x, y},
       {translationDeltaX, translationDeltaY},
       scaleDelta, expansionDelta, rotationDelta,
       {cumulativeTranslationX, cumulativeTranslationY},
-      cumulativeScale, cumulativeExpansion, cumulativeRotation, m_bInertia);
+      cumulativeScale, cumulativeExpansion, cumulativeRotation, m_bInertia});
 
      if(!m_bInertia) {
         // Set values for one finger rotations
@@ -121,9 +121,9 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
     {
         m_coRef->bIsInertiaActive = FALSE;
     
-        m_coRef->doDrawing->ManipulationCompleted({x, y},
+        m_coRef->doDrawing->ManipulationCompleted({{x, y},
           {cumulativeTranslationX, cumulativeTranslationY},
-          cumulativeScale, cumulativeExpansion, cumulativeRotation);
+          cumulativeScale, cumulativeExpansion, cumulativeRotation});
 
         // Stop timer that handles inertia
         KillTimer(m_hWnd, m_iTimerId);

@@ -17,17 +17,21 @@ public:
     : CTransformableDrawingObject(hWnd, d2dDriver) {}
   ~DialOnALeash() override {};
 
-  void ManipulationStarted(Point2F) override {}
+  void ManipulationStarted(Point2F) override {
+    mIsShown = true;
+  }
 
-  void ManipulationDelta(Point2F pos, Point2F dTranslation,
-    float dScale, float dExtension, float dRotation,
-    Point2F sumTranslation, float sumScale, float sumExpansion, float sumRotation,
-      bool isExtrapolated) override {}
+  void ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
+    Rotate(params.dRotation);
+  }
 
-  void ManipulationCompleted(Point2F pos, Point2F sumTranslation,
-    float sumScale, float sumExpansion, float sumRotation) {}
+  void ManipulationCompleted(CDrawingObject::ManipCompletedParams params) {
+    mIsShown = false;
+  }
 
   void Paint() override {
+    if (!mIsShown)
+      return;
 
     const auto pos = Center() + Point2F{350.f, 350.f};
     const auto outerRadius = 300.f;
@@ -50,34 +54,6 @@ public:
       m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle + 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
       m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle - 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
     }
-
-#if 0
-    ID2D1PathGeometryPtr pathGeometry;
-    auto hr = m_d2dDriver->m_spD2DFactory->CreatePathGeometry(&pathGeometry);
-    if (!SUCCEEDED(hr)) {
-      return;
-    }
-    ID2D1GeometrySink *pSink = NULL;
-    hr = pathGeometry->Open(&pSink);
-    if (SUCCEEDED(hr)) {
-      pSink->SetFillMode(D2D1_FILL_MODE_WINDING);
-
-      pSink->BeginFigure(pos.to<D2D_POINT_2F>(), D2D1_FIGURE_BEGIN_FILLED);
-
-      pSink->AddArc(
-        D2D1::ArcSegment(
-        D2D1::Point2F(200, 200), // end point of the top half circle, also the start point of the bottom half circle
-        D2D1::SizeF(150, 150), // radius
-        0.0f, // rotation angle
-        D2D1_SWEEP_DIRECTION_CLOCKWISE,
-        D2D1_ARC_SIZE_LARGE
-        ));
-
-      pSink->EndFigure(D2D1_FIGURE_END_CLOSED);
-    }
-    hr = pSink->Close();
-    m_spRT->FillGeometry(pathGeometry, m_d2dDriver->m_spSomePinkishBlueBrush);
-#endif
   }
 
   bool InRegion(Point2F pos) override {
@@ -86,6 +62,7 @@ public:
     return b;
   }
 
+  bool mIsShown = false;
   ID2D1EllipseGeometryPtr mBackground;
 };
 
@@ -111,32 +88,28 @@ void CSlider::ManipulationStarted(Point2F pos) {
 }
 
 
-void CSlider::ManipulationDelta(Point2F pos, Point2F dTranslation,
-    float dScale, float dExtension, float dRotation,
-    Point2F sumTranslation, float sumScale, float sumExpansion, float sumRotation,
-    bool isExtrapolated) {
+void CSlider::ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
   if(gShiftPressed) {
     float rads = 180.0f / 3.14159f;
 
-    SetManipulationOrigin(pos);
+    SetManipulationOrigin(params.pos);
 
-    Rotate(dRotation * rads);
+    Rotate(params.dRotation * rads);
 
     // Apply translation based on scaleDelta
-    Scale(dScale);
+    Scale(params.dScale);
 
     // Apply translation based on translationDelta
-    Translate(dTranslation, isExtrapolated);
+    Translate(params.dTranslation, params.isExtrapolated);
   }
   else
-    HandleTouch(pos.y, sumTranslation.x, dTranslation.y);
+    HandleTouch(params.pos.y, params.sumTranslation.x, params.dTranslation.y);
 }
 
 
-void CSlider::ManipulationCompleted(Point2F pos, Point2F sumTranslation,
-      float sumScale, float sumExpansion, float sumRotation) {
+void CSlider::ManipulationCompleted(CDrawingObject::ManipCompletedParams params) {
   if(!gShiftPressed)
-    HandleTouch(pos.y, sumTranslation.x, 0.f);
+    HandleTouch(params.pos.y, params.sumTranslation.x, 0.f);
 }
 
 
