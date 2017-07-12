@@ -19,33 +19,33 @@ public:
 
     CSlider(HWND hwnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode);
     ~CSlider() override;
-    void ManipulationStarted(FLOAT x, FLOAT y) override;
+    void ManipulationStarted(float x, float y) override;
 
     // Handles event when the manipulation is progress
     void ManipulationDelta(
-        FLOAT x,
-        FLOAT y,
-        FLOAT translationDeltaX,
-        FLOAT translationDeltaY,
-        FLOAT scaleDelta,
-        FLOAT expansionDelta,
-        FLOAT rotationDelta,
-        FLOAT cumulativeTranslationX,
-        FLOAT cumulativeTranslationY,
-        FLOAT cumulativeScale,
-        FLOAT cumulativeExpansion,
-        FLOAT cumulativeRotation,
+        float x,
+        float y,
+        float translationDeltaX,
+        float translationDeltaY,
+        float scaleDelta,
+        float expansionDelta,
+        float rotationDelta,
+        float cumulativeTranslationX,
+        float cumulativeTranslationY,
+        float cumulativeScale,
+        float cumulativeExpansion,
+        float cumulativeRotation,
         bool isExtrapolated) override;
 
     // Handles event when the manipulation ends
     void ManipulationCompleted(
-        FLOAT x,
-        FLOAT y,
-        FLOAT cumulativeTranslationX,
-        FLOAT cumulativeTranslationY,
-        FLOAT cumulativeScale,
-        FLOAT cumulativeExpansion,
-        FLOAT cumulativeRotation) override;
+        float x,
+        float y,
+        float cumulativeTranslationX,
+        float cumulativeTranslationY,
+        float cumulativeScale,
+        float cumulativeExpansion,
+        float cumulativeRotation) override;
 
     void ResetState(const float startX, const float startY, 
         const int ixClient, const int iyClient, 

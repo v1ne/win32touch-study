@@ -25,20 +25,20 @@ CSquare::~CSquare()
 }
 
 
-void CSquare::ManipulationStarted(FLOAT x, FLOAT y)
+void CSquare::ManipulationStarted(float x, float y)
 {
     RestoreRealPosition();
 }
 
 
-void CSquare::ManipulationDelta(FLOAT x, FLOAT y,
-    FLOAT translationDeltaX, FLOAT translationDeltaY,
-    FLOAT scaleDelta, FLOAT expansionDelta, FLOAT rotationDelta,
-    FLOAT cumulativeTranslationX, FLOAT cumulativeTranslationY,
-    FLOAT cumulativeScale, FLOAT cumulativeExpansion, FLOAT cumulativeRotation,
+void CSquare::ManipulationDelta(float x, float y,
+    float translationDeltaX, float translationDeltaY,
+    float scaleDelta, float expansionDelta, float rotationDelta,
+    float cumulativeTranslationX, float cumulativeTranslationY,
+    float cumulativeScale, float cumulativeExpansion, float cumulativeRotation,
     bool isExtrapolated)
 {
-    FLOAT rads = 180.0f / 3.14159f;
+    float rads = 180.0f / 3.14159f;
     
     SetManipulationOrigin(x, y);
 
@@ -52,13 +52,13 @@ void CSquare::ManipulationDelta(FLOAT x, FLOAT y,
 }
 
 void CSquare::ManipulationCompleted(
-    FLOAT x,
-    FLOAT y,
-    FLOAT cumulativeTranslationX,
-    FLOAT cumulativeTranslationY,
-    FLOAT cumulativeScale,
-    FLOAT cumulativeExpansion,
-    FLOAT cumulativeRotation) {}
+    float x,
+    float y,
+    float cumulativeTranslationX,
+    float cumulativeTranslationY,
+    float cumulativeScale,
+    float cumulativeExpansion,
+    float cumulativeRotation) {}
 
 
 // Sets the default position, dimensions and color for the drawing object

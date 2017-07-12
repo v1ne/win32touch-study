@@ -16,33 +16,33 @@ class CDrawingObject {
 public:
   virtual ~CDrawingObject() {};
 
-  virtual void ManipulationStarted(FLOAT x, FLOAT y) = 0;
+  virtual void ManipulationStarted(float x, float y) = 0;
 
   // Handles event when the manipulation is progress
   virtual void ManipulationDelta(
-      FLOAT x,
-      FLOAT y,
-      FLOAT translationDeltaX,
-      FLOAT translationDeltaY,
-      FLOAT scaleDelta,
-      FLOAT expansionDelta,
-      FLOAT rotationDelta,
-      FLOAT cumulativeTranslationX,
-      FLOAT cumulativeTranslationY,
-      FLOAT cumulativeScale,
-      FLOAT cumulativeExpansion,
-      FLOAT cumulativeRotation,
+      float x,
+      float y,
+      float translationDeltaX,
+      float translationDeltaY,
+      float scaleDelta,
+      float expansionDelta,
+      float rotationDelta,
+      float cumulativeTranslationX,
+      float cumulativeTranslationY,
+      float cumulativeScale,
+      float cumulativeExpansion,
+      float cumulativeRotation,
       bool isExtrapolated) = 0;
 
   // Handles event when the manipulation ends
   virtual void ManipulationCompleted(
-      FLOAT x,
-      FLOAT y,
-      FLOAT cumulativeTranslationX,
-      FLOAT cumulativeTranslationY,
-      FLOAT cumulativeScale,
-      FLOAT cumulativeExpansion,
-      FLOAT cumulativeRotation) = 0;
+      float x,
+      float y,
+      float cumulativeTranslationX,
+      float cumulativeTranslationY,
+      float cumulativeScale,
+      float cumulativeExpansion,
+      float cumulativeRotation) = 0;
     
   virtual void Paint() = 0;
   virtual bool InRegion(float x, float y) = 0;

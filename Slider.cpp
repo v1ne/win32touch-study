@@ -10,15 +10,51 @@
 
 #define DEFAULT_DIRECTION	0
 
-/*
-class DialOnALeash  : {
+
+class DialOnALeash: public CDrawingObject {
 public:
   DialOnALeash() {
   }
- 
-  
+
+  ~DialOnALeash() override {};
+
+  void ManipulationStarted(float x, float y) override {}
+
+  // Handles event when the manipulation is progress
+  void ManipulationDelta(
+      float x,
+      float y,
+      float translationDeltaX,
+      float translationDeltaY,
+      float scaleDelta,
+      float expansionDelta,
+      float rotationDelta,
+      float cumulativeTranslationX,
+      float cumulativeTranslationY,
+      float cumulativeScale,
+      float cumulativeExpansion,
+      float cumulativeRotation,
+      bool isExtrapolated) override {}
+
+  // Handles event when the manipulation ends
+  void ManipulationCompleted(
+      float x,
+      float y,
+      float cumulativeTranslationX,
+      float cumulativeTranslationY,
+      float cumulativeScale,
+      float cumulativeExpansion,
+      float cumulativeRotation) {}
+    
+  void Paint() {};
+  bool InRegion(float x, float y) override {}
+  float GetPosY() override {}
+  float GetPosX() override {}
+  float GetWidth() override {}
+  float GetHeight() override {}
+  float GetCenterX() override {}
+  float GetCenterY() override {}
 };
-*/
 
 CSlider::CSlider(HWND hwnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode) :
   m_hWnd(hwnd),
@@ -34,7 +70,7 @@ CSlider::~CSlider()
 }
 
 
-void CSlider::ManipulationStarted(FLOAT x, FLOAT y) {
+void CSlider::ManipulationStarted(float x, float y) {
   RestoreRealPosition();
 
   m_rawTouchValue = m_value;
@@ -44,14 +80,14 @@ void CSlider::ManipulationStarted(FLOAT x, FLOAT y) {
 }
 
 
-void CSlider::ManipulationDelta(FLOAT x, FLOAT y,
-    FLOAT translationDeltaX, FLOAT translationDeltaY,
-    FLOAT scaleDelta, FLOAT expansionDelta, FLOAT rotationDelta,
-    FLOAT cumulativeTranslationX, FLOAT cumulativeTranslationY,
-    FLOAT cumulativeScale, FLOAT cumulativeExpansion, FLOAT cumulativeRotation,
+void CSlider::ManipulationDelta(float x, float y,
+    float translationDeltaX, float translationDeltaY,
+    float scaleDelta, float expansionDelta, float rotationDelta,
+    float cumulativeTranslationX, float cumulativeTranslationY,
+    float cumulativeScale, float cumulativeExpansion, float cumulativeRotation,
     bool isExtrapolated) {
   if(gShiftPressed) {
-    FLOAT rads = 180.0f / 3.14159f;
+    float rads = 180.0f / 3.14159f;
 
     SetManipulationOrigin(x, y);
 
@@ -69,9 +105,9 @@ void CSlider::ManipulationDelta(FLOAT x, FLOAT y,
 }
 
 
-void CSlider::ManipulationCompleted(FLOAT x, FLOAT y,
-    FLOAT cumulativeTranslationX, FLOAT cumulativeTranslationY,
-    FLOAT cumulativeScale, FLOAT cumulativeExpansion, FLOAT cumulativeRotation) {
+void CSlider::ManipulationCompleted(float x, float y,
+    float cumulativeTranslationX, float cumulativeTranslationY,
+    float cumulativeScale, float cumulativeExpansion, float cumulativeRotation) {
   if(!gShiftPressed)
     HandleTouch(y, cumulativeTranslationX, 0.f);
 }
