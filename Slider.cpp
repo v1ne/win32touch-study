@@ -13,16 +13,22 @@
 
 class DialOnALeash: public CTransformableDrawingObject {
 public:
-  DialOnALeash::DialOnALeash(HWND hWnd, CD2DDriver* d2dDriver)
-    : CTransformableDrawingObject(hWnd, d2dDriver) {}
+  DialOnALeash::DialOnALeash(HWND hWnd, CD2DDriver* d2dDriver, CSlider* pParent)
+      : CTransformableDrawingObject(hWnd, d2dDriver)
+      , mpSlider(pParent) {
+  }
   ~DialOnALeash() override {};
 
   void ManipulationStarted(Point2F) override {
-    mIsShown = true;
   }
 
   void ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
-    Rotate(params.dRotation);
+    float rads = 180.0f / 3.14159f;
+
+    SetManipulationOrigin(params.pos);
+    Rotate(params.dRotation * rads);
+    Scale(params.dScale);
+    Translate(params.dTranslation, params.isExtrapolated); 
   }
 
   void ManipulationCompleted(CDrawingObject::ManipCompletedParams params) {
@@ -33,9 +39,9 @@ public:
     if (!mIsShown)
       return;
 
-    const auto pos = Center() + Point2F{350.f, 350.f};
-    const auto outerRadius = 300.f;
-    const auto innerRadius = 200.f;
+    const auto pos = mRenderPos;
+    const auto innerRadius = mSize.x / 2.f;
+    const auto outerRadius = innerRadius * 1.5f;
     D2D1_ELLIPSE background = {pos.to<D2D1_POINT_2F>(), outerRadius, outerRadius};
     m_d2dDriver->m_spD2DFactory->CreateEllipseGeometry(background, &mBackground);
     m_spRT->FillGeometry(mBackground, m_d2dDriver->m_spTransparentWhiteBrush);
@@ -57,6 +63,8 @@ public:
   }
 
   bool InRegion(Point2F pos) override {
+    if (!mIsShown) return false;
+
     BOOL b = FALSE;
     mBackground->FillContainsPoint(pos.to<D2D1_POINT_2F>(), &m_lastMatrix, &b);
     return b;
@@ -64,6 +72,7 @@ public:
 
   bool mIsShown = false;
   ID2D1EllipseGeometryPtr mBackground;
+  CSlider* mpSlider;
 };
 
 CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode)
@@ -75,6 +84,7 @@ CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionM
 
 CSlider::~CSlider()
 {
+  HideDial();
 }
 
 
@@ -85,6 +95,11 @@ void CSlider::ManipulationStarted(Point2F pos) {
 
   if(!gShiftPressed)
     HandleTouch(pos.y, 0.f, 0.f);
+
+  if(m_mode == MODE_DIAL) {
+    MakeDial();
+    mpDial->ManipulationStarted(pos);
+  }
 }
 
 
@@ -93,23 +108,27 @@ void CSlider::ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
     float rads = 180.0f / 3.14159f;
 
     SetManipulationOrigin(params.pos);
-
     Rotate(params.dRotation * rads);
-
-    // Apply translation based on scaleDelta
     Scale(params.dScale);
-
-    // Apply translation based on translationDelta
     Translate(params.dTranslation, params.isExtrapolated);
+  } else {
+    if (mpDial && !InRegion(params.pos))
+      mpDial->mIsShown = true;
+
+    if (mpDial && mpDial->InRegion(params.pos))
+      mpDial->ManipulationDelta(params);
+    else
+      HandleTouch(params.pos.y, params.sumTranslation.x, params.dTranslation.y);
   }
-  else
-    HandleTouch(params.pos.y, params.sumTranslation.x, params.dTranslation.y);
 }
 
 
 void CSlider::ManipulationCompleted(CDrawingObject::ManipCompletedParams params) {
   if(!gShiftPressed)
     HandleTouch(params.pos.y, params.sumTranslation.x, 0.f);
+
+  if(mpDial) mpDial->ManipulationCompleted(params);
+  HideDial();
 }
 
 
@@ -167,6 +186,8 @@ void CSlider::Paint()
       break;
     }
 
+    if(mpDial) mpDial->Paint();
+
     // Restore our transform to nothing
     const auto identityMatrix = D2D1::Matrix3x2F::Identity();
     m_spRT->SetTransform(&identityMatrix);
@@ -189,14 +210,11 @@ void CSlider::PaintSlider()
   const auto fgRect = D2D1::RectF(mRenderPos.x + borderWidth, topPos, mRenderPos.x+mSize.x - borderWidth, bottomPos);
   ID2D1RectangleGeometryPtr fgGeometry;
   m_d2dDriver->m_spD2DFactory->CreateRectangleGeometry(fgRect, &fgGeometry);
-  m_spRT->FillGeometry(fgGeometry,
-    m_mode == MODE_RELATIVE ? m_d2dDriver->m_spCornflowerBrush : m_d2dDriver->m_spSomePinkishBlueBrush);
+  m_spRT->FillGeometry(fgGeometry, BrushForMode());
 
   wchar_t buf[16];
   wsprintf(buf, L"%d%%", int(m_value*100));
   m_d2dDriver->RenderText({mRenderPos.x, mRenderPos.y, mRenderPos.x + mSize.x, mRenderPos.y + topBorder}, buf, wcslen(buf));
-
-  DialOnALeash(m_hWnd, m_d2dDriver).Paint();
 }
 
 
@@ -216,8 +234,8 @@ void CSlider::PaintKnob()
 
   const auto knobMarkAngle = -135.f - m_value * 270;
   const auto markSize = Point2F{10.f, 5.f};
-  m_d2dDriver->RenderTiltedRect(Center(), knobRadius - markSize.x, knobMarkAngle, markSize,
-    m_mode == MODE_RELATIVE ? m_d2dDriver->m_spCornflowerBrush : m_d2dDriver->m_spSomePinkishBlueBrush);
+  m_d2dDriver->RenderTiltedRect(Center(), knobRadius - markSize.x, knobMarkAngle, markSize, BrushForMode());
+
   for(int i = 0; i <= 270; i += 30) {
     m_d2dDriver->RenderTiltedRect(Center(), knobRadius, float(-135 - i), {3.f, 1.f}, m_d2dDriver->m_spBlackBrush);
   }
@@ -228,9 +246,39 @@ void CSlider::PaintKnob()
 }
 
 
-bool CSlider::InRegion(Point2F pos)
+bool CSlider::InMyRegion(Point2F pos)
 {
   BOOL b = FALSE;
   m_spRectGeometry->FillContainsPoint(pos.to<D2D1_POINT_2F>(), &m_lastMatrix, &b);
   return b;
+}
+
+
+bool CSlider::InRegion(Point2F pos) {
+  return InMyRegion(pos) || (mpDial && mpDial->InRegion(pos));
+}
+
+
+void CSlider::MakeDial()
+{
+  assert(!mpDial);
+  mpDial = new DialOnALeash(m_hWnd, m_d2dDriver, this);
+  mpDial->ResetState(mPos, mClientArea, {300.f, 300.f});
+}
+
+
+void CSlider::HideDial()
+{
+  delete mpDial;
+  mpDial = nullptr;
+}
+
+ID2D1SolidColorBrush* CSlider::BrushForMode()
+{
+  switch(m_mode) {
+  case MODE_ABSOLUTE: return m_d2dDriver->m_spSomePinkishBlueBrush;
+  case MODE_RELATIVE: return m_d2dDriver->m_spCornflowerBrush;
+  case MODE_DIAL: return m_d2dDriver->m_spSomeGreenishBrush;
+  }
+  return nullptr;
 }

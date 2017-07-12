@@ -12,37 +12,46 @@
 #include "DrawingObject.h"
 #include <windows.h>
 
+class DialOnALeash;
+
 class CSlider : public CTransformableDrawingObject {
 public:
-    enum SliderType {TYPE_SLIDER, TYPE_KNOB};
-    enum InteractionMode { MODE_ABSOLUTE, MODE_RELATIVE, NUM_MODES};
+  enum SliderType {TYPE_SLIDER, TYPE_KNOB};
+  enum InteractionMode { MODE_ABSOLUTE, MODE_RELATIVE, MODE_DIAL, NUM_MODES};
 
-    CSlider(HWND hwnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode);
-    ~CSlider() override;
+  CSlider(HWND hwnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode);
+  ~CSlider() override;
 
-    void ManipulationStarted(Point2F Po) override;
-    void ManipulationDelta(CDrawingObject::ManipDeltaParams) override;
-    void ManipulationCompleted(CDrawingObject::ManipCompletedParams) override;
+  void ManipulationStarted(Point2F Po) override;
+  void ManipulationDelta(CDrawingObject::ManipDeltaParams) override;
+  void ManipulationCompleted(CDrawingObject::ManipCompletedParams) override;
 
-    void Paint() override;
-    bool InRegion(Point2F pos) override;
+  void Paint() override;
+  bool InRegion(Point2F pos) override;
 
 private:
-    void PaintSlider();
-    void PaintKnob();
+  ID2D1SolidColorBrush* BrushForMode();
+  void PaintSlider();
+  void PaintKnob();
+  bool InMyRegion(Point2F pos);
 
-    void HandleTouch(float y, float cumulativeTranslationX, float deltaY);
-    void HandleTouchInAbsoluteInteractionMode(float y);
-    void HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY);
+  void HandleTouch(float y, float cumulativeTranslationX, float deltaY);
+  void HandleTouchInAbsoluteInteractionMode(float y);
+  void HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY);
 
-    float m_value = 0.0f;
-    float m_rawTouchValue = 0.0f;
+  void MakeDial();
+  void HideDial();
 
-    ID2D1RectangleGeometryPtr m_spRectGeometry;
-    
-    float m_bottomPos;
-    float m_sliderHeight;
+  float m_value = 0.0f;
+  float m_rawTouchValue = 0.0f;
 
-    InteractionMode m_mode;
-    SliderType m_type;
+  ID2D1RectangleGeometryPtr m_spRectGeometry;
+  
+  float m_bottomPos;
+  float m_sliderHeight;
+
+  InteractionMode m_mode;
+  SliderType m_type;
+  DialOnALeash* mpDial = nullptr;
+  friend class DialOnALeash;
 };

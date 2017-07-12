@@ -59,6 +59,7 @@ public:
     ID2D1SolidColorBrushPtr m_spDarkGreyBrush;
     ID2D1SolidColorBrushPtr m_spCornflowerBrush;
     ID2D1SolidColorBrushPtr m_spSomePinkishBlueBrush;
+    ID2D1SolidColorBrushPtr m_spSomeGreenishBrush;
     ID2D1SolidColorBrushPtr m_spTransparentWhiteBrush;
     ID2D1SolidColorBrushPtr m_spTextFgBrush;
 

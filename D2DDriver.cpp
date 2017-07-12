@@ -145,6 +145,7 @@ HRESULT CD2DDriver::CreateDeviceResources() {
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::CornflowerBlue), &m_spCornflowerBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DimGray), &m_spTextFgBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::MediumSlateBlue), &m_spSomePinkishBlueBrush);
+        m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::MediumSeaGreen), &m_spSomeGreenishBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::Black), &m_spBlackBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::White), &m_spWhiteBrush);
     }
@@ -242,6 +243,7 @@ VOID CD2DDriver::DiscardDeviceResources() {
     m_spDarkGreyBrush.Release();
     m_spCornflowerBrush.Release();
     m_spSomePinkishBlueBrush.Release();
+    m_spSomeGreenishBrush.Release();
     m_spBlackBrush.Release();
     m_spWhiteBrush.Release();
 }	
