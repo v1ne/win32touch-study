@@ -55,6 +55,9 @@ public:
   inline Point2F Size() { return mSize; }
   Point2F Center() { return Pos() + Size() / 2.f; }
 
+  virtual Point2F PivotPoint() = 0;
+  virtual float PivotRadius() = 0;
+
 protected:
   HWND m_hWnd;
   CD2DDriver* m_d2dDriver;
@@ -71,6 +74,9 @@ class CTransformableDrawingObject: public CDrawingObject
 public:
   CTransformableDrawingObject(HWND hWnd, CD2DDriver* d2dDriver) : CDrawingObject(hWnd, d2dDriver) {}
   void ResetState(Point2F start, Point2F clientArea, Point2F initialSize);
+
+  Point2F PivotPoint() override;
+  float PivotRadius() override;
 
 protected:
   void RestoreRealPosition();

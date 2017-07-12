@@ -59,17 +59,10 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationDelta(
       cumulativeScale, cumulativeExpansion, cumulativeRotation, m_bInertia});
 
      if(!m_bInertia) {
-        // Set values for one finger rotations
-
-        const auto halfSize = dObj->Size() / 2.f;
-
-        auto fPivotRadius =
-            (FLOAT)(sqrt(pow(halfSize.x, 2) + pow(halfSize.y, 2)))*0.4f;
-        const auto pivotPoint = dObj->Center();
-
+        const auto pivotPoint = dObj->PivotPoint();
         HRESULT hrPPX = mp->put_PivotPointX(pivotPoint.x);
         HRESULT hrPPY = mp->put_PivotPointY(pivotPoint.y);
-        HRESULT hrPR  = mp->put_PivotRadius(fPivotRadius);
+        HRESULT hrPR  = mp->put_PivotRadius(dObj->PivotRadius());
         
         if(FAILED(hrPPX) || FAILED(hrPPY) || FAILED(hrPR))
         {
