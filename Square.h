@@ -52,14 +52,7 @@ public:
         const DrawingColor colorChoice);
 
     void Paint() override;
-    void Translate(float fdx, float fdy, bool bInertia) override;
-    void Scale(const float fFactor) override;
-    void Rotate(const float fAngle) override;
     bool InRegion(LONG lX, LONG lY) override;
-    void RestoreRealPosition() override;
-
-    // Public set method
-    void SetManipulationOrigin(float x, float y) override;
 
     // Public get methods
     float GetPosY() override;
@@ -71,6 +64,12 @@ public:
 
 
 private:
+    void RestoreRealPosition();
+    void SetManipulationOrigin(float x, float y);
+    void Translate(float fdx, float fdy, bool bInertia);
+    void Scale(const float fFactor);
+    void Rotate(const float fAngle);
+
     void RotateVector(float* vector, float* tVector, float fAngle);
     void ComputeElasticPoint(float fIPt, float* fRPt, int iDimension);
     void UpdateBorders();

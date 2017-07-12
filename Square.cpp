@@ -25,7 +25,10 @@ CSquare::~CSquare()
 }
 
 
-void CSquare::ManipulationStarted(FLOAT x, FLOAT y) {}
+void CSquare::ManipulationStarted(FLOAT x, FLOAT y)
+{
+    RestoreRealPosition();
+}
 
 
 void CSquare::ManipulationDelta(FLOAT x, FLOAT y,

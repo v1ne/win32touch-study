@@ -45,14 +45,7 @@ public:
       FLOAT cumulativeRotation) = 0;
     
   virtual void Paint() = 0;
-  virtual void Translate(float fdx, float fdy, bool bInertia) = 0;
-  virtual void Scale(const float fFactor) = 0;
-  virtual void Rotate(const float fAngle) = 0;
   virtual bool InRegion(long lX, long lY) = 0;
-  virtual void RestoreRealPosition() = 0;
-
-  // Public set method
-  virtual void SetManipulationOrigin(float x, float y) = 0;
 
   // Public get methods
   virtual float GetPosY() = 0;

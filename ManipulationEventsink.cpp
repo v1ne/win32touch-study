@@ -20,8 +20,6 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationStarted(
 
     m_coRef->bIsInertiaActive = FALSE;
     KillTimer(m_hWnd, m_iTimerId);
-    
-    m_coRef->doDrawing->RestoreRealPosition();
 
     m_coRef->doDrawing->ManipulationStarted(x, y);
 

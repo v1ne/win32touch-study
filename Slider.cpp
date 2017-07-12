@@ -10,6 +10,15 @@
 
 #define DEFAULT_DIRECTION	0
 
+/*
+class DialOnALeash  : {
+public:
+  DialOnALeash() {
+  }
+ 
+  
+};
+*/
 
 CSlider::CSlider(HWND hwnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode) :
   m_hWnd(hwnd),
@@ -26,6 +35,8 @@ CSlider::~CSlider()
 
 
 void CSlider::ManipulationStarted(FLOAT x, FLOAT y) {
+  RestoreRealPosition();
+
   m_rawTouchValue = m_value;
 
   if(!gShiftPressed)
