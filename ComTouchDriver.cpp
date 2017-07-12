@@ -101,7 +101,8 @@ BOOL CComTouchDriver::Initialize()
         {
           auto pObject = new (std::nothrow) CCoreObject(m_hWnd, i, m_d2dDriver, false);
           pObject->Initialize(new (std::nothrow) CSlider(m_hWnd, m_d2dDriver,
-            CSlider::TYPE_SLIDER, CSlider::InteractionMode(i % CSlider::NUM_MODES)));
+            CSlider::TYPE_SLIDER,
+            i < NUM_SLIDERS ? CSlider::InteractionMode(i % CSlider::NUM_MODES) : CSlider::MODE_RELATIVE));
           m_lCoreObjects.push_front(pObject);
         }
 

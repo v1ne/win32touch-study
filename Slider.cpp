@@ -28,7 +28,10 @@ public:
     SetManipulationOrigin(params.pos);
     Rotate(params.dRotation * rads);
     Scale(params.dScale);
-    Translate(params.dTranslation, params.isExtrapolated); 
+    Translate(params.dTranslation, params.isExtrapolated);
+
+    const auto rawValue = mpSlider->m_rawTouchValue += params.dRotation / (2*3.14159f);
+    mpSlider->m_value = ::fmaxf(0, ::fminf(1, rawValue));
   }
 
   void ManipulationCompleted(CDrawingObject::ManipCompletedParams params) {
@@ -39,7 +42,19 @@ public:
     if (!mIsShown)
       return;
 
-    const auto pos = mRenderPos;
+    if((m_spRT->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
+    {
+      return;
+    }
+
+    const auto rotateMatrix = D2D1::Matrix3x2F::Rotation(
+      m_fAngleCumulative,
+      (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
+
+    m_spRT->SetTransform(&rotateMatrix);
+    m_lastMatrix = rotateMatrix;
+
+    const auto pos = Center();
     const auto innerRadius = mSize.x / 2.f;
     const auto outerRadius = innerRadius * 1.5f;
     D2D1_ELLIPSE background = {pos.to<D2D1_POINT_2F>(), outerRadius, outerRadius};
@@ -60,6 +75,9 @@ public:
       m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle + 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
       m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle - 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
     }
+
+    const auto identityMatrix = D2D1::Matrix3x2F::Identity();
+    m_spRT->SetTransform(&identityMatrix);
   }
 
   bool InRegion(Point2F pos) override {
@@ -68,6 +86,15 @@ public:
     BOOL b = FALSE;
     mBackground->FillContainsPoint(pos.to<D2D1_POINT_2F>(), &m_lastMatrix, &b);
     return b;
+  }
+
+  Point2F PivotPoint() override {
+    return Pos();
+  }
+
+
+  float PivotRadius() override {
+    return mSize.x;
   }
 
   bool mIsShown = false;
@@ -93,12 +120,13 @@ void CSlider::ManipulationStarted(Point2F pos) {
 
   m_rawTouchValue = m_value;
 
-  if(!gShiftPressed)
-    HandleTouch(pos.y, 0.f, 0.f);
-
   if(m_mode == MODE_DIAL) {
-    MakeDial();
+    MakeDial(pos);
+    mpDial->mIsShown=true;
     mpDial->ManipulationStarted(pos);
+  } else {
+    if(!gShiftPressed)
+      HandleTouch(pos.y, 0.f, 0.f);
   }
 }
 
@@ -111,25 +139,23 @@ void CSlider::ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
     Rotate(params.dRotation * rads);
     Scale(params.dScale);
     Translate(params.dTranslation, params.isExtrapolated);
+  } else if(m_mode == MODE_DIAL) {
+    mpDial->ManipulationDelta(params);
+    if (!InRegion(params.pos)) mpDial->mIsShown = true;
   } else {
-    if(mpDial) {
-      mpDial->ManipulationDelta(params);
-
-      if (!InRegion(params.pos)) mpDial->mIsShown = true;
-    }
-
-    if (!mpDial || !mpDial->InRegion(params.pos))
-      HandleTouch(params.pos.y, params.sumTranslation.x, params.dTranslation.y);
+    HandleTouch(params.pos.y, params.sumTranslation.x, params.dTranslation.y);
   }
 }
 
 
 void CSlider::ManipulationCompleted(CDrawingObject::ManipCompletedParams params) {
-  if(!gShiftPressed)
-    HandleTouch(params.pos.y, params.sumTranslation.x, 0.f);
-
-  if(mpDial) mpDial->ManipulationCompleted(params);
-  HideDial();
+  if(m_mode == MODE_DIAL) {
+    if(mpDial) mpDial->ManipulationCompleted(params);
+    HideDial();
+  } else {
+    if(!gShiftPressed)
+      HandleTouch(params.pos.y, params.sumTranslation.x, 0.f);
+  }
 }
 
 
@@ -187,11 +213,11 @@ void CSlider::Paint()
       break;
     }
 
-    if(mpDial) mpDial->Paint();
-
     // Restore our transform to nothing
     const auto identityMatrix = D2D1::Matrix3x2F::Identity();
     m_spRT->SetTransform(&identityMatrix);
+
+    if(mpDial) mpDial->Paint();
   }
 }
 
@@ -260,11 +286,12 @@ bool CSlider::InRegion(Point2F pos) {
 }
 
 
-void CSlider::MakeDial()
+void CSlider::MakeDial(Point2F center)
 {
   assert(!mpDial);
+  const auto dialSize = Point2F{300.f};
   mpDial = new DialOnALeash(m_hWnd, m_d2dDriver, this);
-  mpDial->ResetState(mPos, mClientArea, {300.f, 300.f});
+  mpDial->ResetState(center - dialSize/2.f, mClientArea, dialSize);
 }
 
 

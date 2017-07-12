@@ -90,7 +90,7 @@ protected:
   void EnsureVisible();
 
   // Keeps the last matrix used to perform the rotate transform
-  D2D_MATRIX_3X2_F m_lastMatrix;
+  D2D_MATRIX_3X2_F m_lastMatrix = {};
 
   Point2F mManipulationStartPos; // Coordinates of where manipulation started
   Point2F mRenderPos; // Rendered top, left coordinates of object

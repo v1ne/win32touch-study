@@ -39,7 +39,7 @@ private:
   void HandleTouchInAbsoluteInteractionMode(float y);
   void HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY);
 
-  void MakeDial();
+  void MakeDial(Point2F center);
   void HideDial();
 
   float m_value = 0.0f;

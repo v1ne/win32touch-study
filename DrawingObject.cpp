@@ -165,5 +165,4 @@ float CTransformableDrawingObject::PivotRadius()
 {
   const auto halfSize = Size() / 2.f;
   return ::sqrtf(::powf(halfSize.x, 2) + ::powf(halfSize.y, 2)) * 0.4f;
-
 }
