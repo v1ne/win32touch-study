@@ -25,10 +25,10 @@ public:
   void ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
     float rads = 180.0f / 3.14159f;
 
-    SetManipulationOrigin(params.pos);
+    //SetManipulationOrigin(params.pos);
     Rotate(params.dRotation * rads);
     Scale(params.dScale);
-    Translate(params.dTranslation, params.isExtrapolated);
+    //Translate(params.dTranslation, params.isExtrapolated);
 
     const auto rawValue = mpSlider->m_rawTouchValue += params.dRotation / (2*3.14159f);
     mpSlider->m_value = ::fmaxf(0, ::fminf(1, rawValue));
@@ -43,12 +43,10 @@ public:
       return;
 
     if((m_spRT->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
-    {
       return;
-    }
 
     const auto rotateMatrix = D2D1::Matrix3x2F::Rotation(
-      m_fAngleCumulative,
+      0,//m_fAngleCumulative,
       (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
 
     m_spRT->SetTransform(&rotateMatrix);
@@ -64,17 +62,19 @@ public:
     m_spRT->FillEllipse({pos.to<D2D1_POINT_2F>(), innerRadius, innerRadius}, m_d2dDriver->m_spWhiteBrush);
     m_spRT->FillEllipse({pos.to<D2D1_POINT_2F>(), 30.f, 30.f}, m_d2dDriver->m_spDarkGreyBrush);
 
-    const auto markSize = Point2F{10.f, 1.f};
+    const auto shortMarkSize = Point2F{10.f, 1.f};
+    const auto longMarkSize = Point2F{15.f, 1.f};
+    const auto angularOffset = -mpSlider->m_rawTouchValue * 360.f;
     for(float i = 0; i < 360.f; i += 3.6f) {
-      m_d2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, i, markSize, m_d2dDriver->m_spDarkGreyBrush);
+      auto markSize = (int(i) % 36) == 0 ? longMarkSize : shortMarkSize;
+      m_d2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, i + angularOffset, markSize, m_d2dDriver->m_spDarkGreyBrush);
     }
 
-    for(auto triangleAngle = 0.f; triangleAngle < 360; triangleAngle += 20) {
+    const auto triangleAngle = 180.f;
       const auto triangleStrokeSize = Point2F{16.f, 4.f};
       const auto vecToTriangle = rotateDeg(Vec2Right(innerRadius), triangleAngle);
       m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle + 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
       m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle - 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
-    }
 
     const auto identityMatrix = D2D1::Matrix3x2F::Identity();
     m_spRT->SetTransform(&identityMatrix);
@@ -284,12 +284,12 @@ bool CSlider::InMyRegion(Point2F pos)
 bool CSlider::InRegion(Point2F pos) {
   return InMyRegion(pos) || (mpDial && mpDial->InRegion(pos));
 }
-
-
 void CSlider::MakeDial(Point2F center)
+
+
 {
   assert(!mpDial);
-  const auto dialSize = Point2F{300.f};
+  const auto dialSize = Point2F{200.f};
   mpDial = new DialOnALeash(m_hWnd, m_d2dDriver, this);
   mpDial->ResetState(center - dialSize/2.f, mClientArea, dialSize);
 }

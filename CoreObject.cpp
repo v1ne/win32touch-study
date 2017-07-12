@@ -56,7 +56,7 @@ BOOL CCoreObject::Initialize(CDrawingObject* pDrawingObject)
             auto manipulations = MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ALL;
             // TODO: Besser lösen!
             //manipulations &= ~MANIPULATION_ROTATE;
-            manipulations &= ~MANIPULATION_SCALE;
+            manipulations = MANIPULATION_ROTATE;
             manipulationProc->put_SupportedManipulations(manipulations);
         }
 

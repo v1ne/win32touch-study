@@ -13,11 +13,8 @@
 #define NUM_SLIDERS 33
 #define NUM_KNOBS 25
 
-CComTouchDriver::CComTouchDriver(HWND hWnd):
-    m_hWnd(hWnd),
-    m_uNumContacts(0),
-    m_dpiScaleX(1.0f),
-    m_dpiScaleY(1.0f)
+CComTouchDriver::CComTouchDriver(HWND hWnd)
+    : m_hWnd(hWnd)
 {
 }
 
@@ -34,8 +31,7 @@ BOOL CComTouchDriver::Initialize()
         // Direct2D automatically does work in logical, so compute the
         // scale to convert from physical to logical coordinates
 
-        m_dpiScaleX = (FLOAT)(DEFAULT_PPI / GetDeviceCaps(hdcScreen, LOGPIXELSX));
-        m_dpiScaleY = (FLOAT)(DEFAULT_PPI / GetDeviceCaps(hdcScreen, LOGPIXELSY));
+        mDpiScale = (FLOAT)(DEFAULT_PPI / GetDeviceCaps(hdcScreen, LOGPIXELSX));
         DeleteDC(hdcScreen);
     }
 

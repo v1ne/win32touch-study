@@ -38,7 +38,7 @@ public:
     // Localizes point for high-DPI
     inline Point2F CComTouchDriver::LocalizePoint(Point2I p)
     {
-        return Point2F(p) * m_dpiScaleX;
+        return Point2F(p) * mDpiScale;
     }
 
 private:
@@ -63,11 +63,10 @@ private:
     int m_iCHeight;
 
     // Scale for converting between dpi's
-    FLOAT m_dpiScaleX;
-    FLOAT m_dpiScaleY;
+    float mDpiScale = 1.0f;
 
     // Keeps track of the number contacts being processed
-    unsigned int m_uNumContacts;
+    unsigned int m_uNumContacts = 0;
 
     CD2DDriver* m_d2dDriver;
 
