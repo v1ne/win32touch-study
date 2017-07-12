@@ -14,44 +14,24 @@
 
 void CTransformableDrawingObject::ResetState(Point2F start, Point2F clientArea, Point2F initialSize)
 {
-  // Set width and height of the client area
-  // must adjust for dpi aware
-  m_ClientAreaWidth = clientArea.x;
-  m_ClientAreaHeight = clientArea.y;
-
-  // Initialize width height of object
-  m_fWidth   = initialSize.x;
-  m_fHeight  = initialSize.y;
+  mClientArea = clientArea;
+  mSize   = initialSize;
 
   // Set outer elastic border
   UpdateBorders();
 
-  // Set cooredinates given by processor
-  m_fXI = start.x;
-  m_fYI = start.y;
+  mPos = start;
+  mRenderPos = start;
+  mManipulationStartPos = Point2F{0.f};
 
-  // Set coordinates used for rendering
-  m_fXR = start.x;
-  m_fYR = start.y;
-
-  // Set touch origin to 0
-  m_fOX = 0.0f;
-  m_fOY = 0.0f;
-
-  // Initialize scaling factor
   m_fFactor = 1.0f;
-
-  // Initialize angle
   m_fAngleCumulative = 0.0f;
 }
 
 
 void CTransformableDrawingObject::Translate(Point2F delta, bool bInertia)
 {
-  m_fdX = delta.x;
-  m_fdY = delta.y;
-
-  auto Offset = Point2F(m_fOX - m_fdX, m_fOY - m_fdY);
+  const auto Offset = mManipulationStartPos - delta;
 
   // Translate based on the offset caused by rotating
   // and scaling in order to vary rotational behavior depending
@@ -60,30 +40,19 @@ void CTransformableDrawingObject::Translate(Point2F delta, bool bInertia)
   auto v1 = Center() - Offset;
   if(m_fAngleApplied != 0.0f)
   {
-    Point2F v2;
-    RotateVector(v1.raw(), v2.raw(), m_fAngleApplied);
-    auto temp = v2 - v1;
-
-    m_fdX += temp.x;
-    m_fdY += temp.y;
+    auto v2 = rotateDeg(v1, m_fAngleApplied);
+    delta += v2 - v1;
   }
 
   if(m_fFactor != 1.0f)
   {
-/* ??? TODO
-    float v1[2];
-    v1[0] = GetCenterX() - fOffset[0];
-    v1[1] = GetCenterY() - fOffset[1];
-*/
     auto v2 = v1 * m_fFactor;
     auto temp = v2 - v1;
 
-    m_fdX += temp.x;
-    m_fdY += temp.y;
+    delta += v2 - v1;
   }
 
-  m_fXI += m_fdX;
-  m_fYI += m_fdY;
+  mPos += delta;
 
   // The following code handles the effect for
   // bouncing off the edge of the screen.  It takes
@@ -93,13 +62,12 @@ void CTransformableDrawingObject::Translate(Point2F delta, bool bInertia)
 
   if (bInertia)
   {
-    ComputeElasticPoint(m_fXI, &m_fXR, m_fBorderX);
-    ComputeElasticPoint(m_fYI, &m_fYR, m_fBorderY);
+    ComputeElasticPoint(mPos.x, &mRenderPos.x, mRightBottomBorders.x);
+    ComputeElasticPoint(mPos.y, &mRenderPos.y, mRightBottomBorders.y);
   }
   else
   {
-    m_fXR = m_fXI;
-    m_fYR = m_fYI;
+    mRenderPos = mPos;
 
     // Make sure it stays on screen
     EnsureVisible();
@@ -108,8 +76,8 @@ void CTransformableDrawingObject::Translate(Point2F delta, bool bInertia)
 
 void CTransformableDrawingObject::EnsureVisible()
 {
-  m_fXR = max(0,min(m_fXI, (float)m_ClientAreaWidth-m_fWidth));
-  m_fYR = max(0,min(m_fYI, (float)m_ClientAreaHeight-m_fHeight));
+  const auto lastValidBottomRightCoordinate = mClientArea - mSize;
+  mRenderPos = maxByComponent(Point2F{0.f}, minByComponent(mPos, lastValidBottomRightCoordinate));
   RestoreRealPosition();
 }
 
@@ -117,26 +85,18 @@ void CTransformableDrawingObject::Scale(const float dFactor)
 {
   m_fFactor = dFactor;
 
-  float scaledW = (dFactor-1) * m_fWidth;
-  float scaledH = (dFactor-1) * m_fHeight;
-  float scaledX = scaledW/2.0f;
-  float scaledY = scaledH/2.0f;
+  auto scaledSize = mSize * (dFactor-1);
+  auto scaledPos = scaledSize / 2.f;
 
-  m_fXI -= scaledX;
-  m_fYI -= scaledY;
-
-  m_fWidth  += scaledW;
-  m_fHeight += scaledH;
+  mPos -= scaledPos;
+  mSize  += scaledSize;
 
   // Only limit scaling in the case that the factor is not 1.0
 
   if(dFactor != 1.0f)
   {
-    m_fXI = max(0, m_fXI);
-    m_fYI = max(0, m_fYI);
-
-    m_fWidth = min(min(m_ClientAreaWidth, m_ClientAreaHeight), m_fWidth);
-    m_fHeight = min(min(m_ClientAreaWidth, m_ClientAreaHeight), m_fHeight);
+    mPos = maxByComponent(Point2F{0.f}, mPos);
+    mSize = minByComponent(Point2F{min(mClientArea.x, mClientArea.y)}, mSize);
   }
 
   // Readjust borders for the objects new size
@@ -151,37 +111,19 @@ void CTransformableDrawingObject::Rotate(const float fAngle)
 
 void CTransformableDrawingObject::SetManipulationOrigin(Point2F origin)
 {
-  m_fOX = origin.x;
-  m_fOY = origin.y;
+  mManipulationStartPos = origin;
 }
-
-// Helper method that rotates a vector using basic math transforms
-void CTransformableDrawingObject::RotateVector(float *vector, float *tVector, float fAngle)
-{
-  auto fAngleRads = fAngle / 180.0f * 3.14159f;
-  auto fSin = float(sin(fAngleRads));
-  auto fCos = float(cos(fAngleRads));
-
-  auto fNewX = (vector[0]*fCos) - (vector[1]*fSin);
-  auto fNewY = (vector[0]*fSin) + (vector[1]*fCos);
-
-  tVector[0] = fNewX;
-  tVector[1] = fNewY;
-}
-
 
 // Sets the internal coordinates to render coordinates
 void CTransformableDrawingObject::RestoreRealPosition()
 {
-  m_fXI = m_fXR;
-  m_fYI = m_fYR;
+  mPos = mRenderPos;
 }
 
 
 void CTransformableDrawingObject::UpdateBorders()
 {
-  m_fBorderX = m_ClientAreaWidth  - m_fWidth;
-  m_fBorderY = m_ClientAreaHeight - m_fHeight;
+  mRightBottomBorders = mClientArea - mSize;
 }
 
 

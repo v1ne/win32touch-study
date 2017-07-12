@@ -184,6 +184,7 @@
     <ClCompile Include="CoreObject.cpp" />
     <ClCompile Include="D2DDriver.cpp" />
     <ClCompile Include="DrawingObject.cpp" />
+    <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="ManipulationEventsink.cpp" />
     <ClCompile Include="ManipulationSample.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level4</WarningLevel>

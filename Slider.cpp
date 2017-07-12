@@ -109,7 +109,7 @@ void CSlider::HandleTouchInAbsoluteInteractionMode(float y)
 
 void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY)
 {
-  const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * m_fWidth);
+  const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * mSize.x);
 
   m_rawTouchValue -= deltaY / m_sliderHeight / dragScalingFactor;
   m_value = ::fmaxf(0, ::fminf(1, m_rawTouchValue));
@@ -122,14 +122,14 @@ void CSlider::Paint()
   {
     const auto rotateMatrix = D2D1::Matrix3x2F::Rotation(
       m_fAngleCumulative,
-      {m_fXR + m_fWidth/2.0f, m_fYR + m_fHeight/2.0f});
+      (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
 
     m_spRT->SetTransform(&rotateMatrix);
 
     // Store the rotate matrix to be used in hit testing
     m_lastMatrix = rotateMatrix;
 
-    const auto bgRect = D2D1::RectF(m_fXR, m_fYR, m_fXR+m_fWidth, m_fYR+m_fHeight);
+    const auto bgRect = D2D1::RectF(mRenderPos.x, mRenderPos.y, mRenderPos.x+mSize.x, mRenderPos.y+mSize.y);
     m_d2dDriver->CreateGeometryRect(bgRect, &m_spRectGeometry);
     m_spRT->FillGeometry(m_spRectGeometry, m_d2dDriver->m_spLightGreyBrush);
 
@@ -151,17 +151,17 @@ void CSlider::Paint()
 
 void CSlider::PaintSlider()
 {
-  const auto borderWidth = m_fWidth / 4;
-  const auto topBorder = m_fHeight * 10 / 100;
-  const auto topEnd = m_fYR + topBorder;
-  const auto bottomPos = m_fYR+m_fHeight;
+  const auto borderWidth = mSize.x / 4;
+  const auto topBorder = mSize.y * 10 / 100;
+  const auto topEnd = mRenderPos.y + topBorder;
+  const auto bottomPos = mRenderPos.y+mSize.y;
   const auto sliderHeight = bottomPos - topEnd;
   const auto topPos = bottomPos - m_value * sliderHeight;
 
   m_bottomPos = bottomPos;
   m_sliderHeight = sliderHeight;
 
-  const auto fgRect = D2D1::RectF(m_fXR + borderWidth, topPos, m_fXR+m_fWidth - borderWidth, bottomPos);
+  const auto fgRect = D2D1::RectF(mRenderPos.x + borderWidth, topPos, mRenderPos.x+mSize.x - borderWidth, bottomPos);
   ID2D1RectangleGeometryPtr fgGeometry;
   m_d2dDriver->CreateGeometryRect(fgRect, &fgGeometry);
   m_spRT->FillGeometry(fgGeometry,
@@ -169,18 +169,18 @@ void CSlider::PaintSlider()
 
   wchar_t buf[16];
   wsprintf(buf, L"%d%%", int(m_value*100));
-  m_d2dDriver->RenderText({m_fXR, m_fYR, m_fXR + m_fWidth, m_fYR + topBorder}, buf, wcslen(buf));
+  m_d2dDriver->RenderText({mRenderPos.x, mRenderPos.y, mRenderPos.x + mSize.x, mRenderPos.y + topBorder}, buf, wcslen(buf));
 }
 
 
 void CSlider::PaintKnob()
 {
-  const auto border = POINTF{m_fWidth / 8, m_fHeight / 8};
+  const auto border = POINTF{mSize.x / 8, mSize.y / 8};
   const auto center = Center().to<D2D1_POINT_2F>();
-  const auto knobRadius = ::fminf((m_fWidth - border.x)/2, (m_fHeight - border.y)/2);
+  const auto knobRadius = ::fminf((mSize.x - border.x)/2, (mSize.y - border.y)/2);
 
-  m_sliderHeight = m_fHeight * 3;
-  m_bottomPos = m_fYR + m_fHeight / 2;
+  m_sliderHeight = mSize.y * 3;
+  m_bottomPos = mRenderPos.y + mSize.y / 2;
 
   D2D1_ELLIPSE knobOutlineParams = {center, knobRadius, knobRadius};
   ID2D1EllipseGeometryPtr knobOutline;
@@ -188,9 +188,8 @@ void CSlider::PaintKnob()
   m_spRT->FillGeometry(knobOutline, m_d2dDriver->m_spDarkGreyBrush);
 
   const auto dotRadius = 3;
-  const auto knobRelPos = POINTF{0, knobRadius - dotRadius};
-  D2D1_POINT_2F knobRelPosRotated;
-  RotateVector((float*)&knobRelPos, (float*)&knobRelPosRotated, 45 + m_value * 270);
+  const auto knobRelPos = Point2F{0, knobRadius - dotRadius};
+  const auto knobRelPosRotated = rotateDeg(knobRelPos, 45 + m_value * 270);
   D2D1_ELLIPSE knobDotParams = {{center.x + knobRelPosRotated.x, center.y + knobRelPosRotated.y}, dotRadius, dotRadius};
   ID2D1EllipseGeometryPtr knobDot;
   m_d2dDriver->CreateEllipseGeometry(knobDotParams, &knobDot);
@@ -199,7 +198,7 @@ void CSlider::PaintKnob()
 
   wchar_t buf[16];
   wsprintf(buf, L"%d%%", int(m_value*100));
-  m_d2dDriver->RenderText({center.x - m_fWidth/3, center.y - border.y, center.x + m_fWidth/3, center.y + border.y}, buf, wcslen(buf));
+  m_d2dDriver->RenderText({center.x - mSize.x/3, center.y - border.y, center.x + mSize.x/3, center.y + border.y}, buf, wcslen(buf));
 }
 
 

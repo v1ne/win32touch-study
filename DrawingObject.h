@@ -33,8 +33,8 @@ public:
   virtual void Paint() = 0;
   virtual bool InRegion(Point2F pos) = 0;
 
-  Point2F Pos() { return {m_fXI, m_fYI}; }
-  Point2F Size() { return {m_fWidth, m_fHeight}; }
+  inline Point2F Pos() { return mPos; }
+  inline Point2F Size() { return mSize; }
   Point2F Center() { return Pos() + Size() / 2.f; }
 
 protected:
@@ -42,13 +42,9 @@ protected:
   CD2DDriver* m_d2dDriver;
   ID2D1HwndRenderTargetPtr m_spRT;
 
-  // Internal top, left coordinates of object (Real inertia values)
-  float m_fXI = 0.f;
-  float m_fYI = 0.f;
-  
-  // Width and height of the object
-  float m_fWidth = 0.f;
-  float m_fHeight = 0.f;
+  // Real top-left coordinate of object
+  Point2F mPos;
+  Point2F mSize;
 };
 
 
@@ -65,7 +61,6 @@ protected:
   void Scale(const float fFactor);
   void Rotate(const float fAngle);
 
-  void RotateVector(float* vector, float* tVector, float fAngle);
   void ComputeElasticPoint(float fIPt, float* fRPt, float fBorderSize);
   void UpdateBorders(); 
   void EnsureVisible();
@@ -73,32 +68,12 @@ protected:
   // Keeps the last matrix used to perform the rotate transform
   D2D_MATRIX_3X2_F m_lastMatrix;
 
-  // Coordinates of where manipulation started
-  float m_fOX;
-  float m_fOY;
-  
-  // Rendered top, left coordinates of object
-  float m_fXR;
-  float m_fYR;
+  Point2F mManipulationStartPos; // Coordinates of where manipulation started
+  Point2F mRenderPos; // Rendered top, left coordinates of object
+  Point2F mRightBottomBorders; // Right and bottom borders relative to the object's size
+  Point2F mClientArea; // Client width and height
 
-  // Scaling factor applied to the object
-  float m_fFactor;
-
-  // Cumulative angular rotation applied to the object
-  float m_fAngleCumulative;
-
-  // Current angular rotation applied to object
-  float m_fAngleApplied;
-
-  // Delta x, y values
-  float m_fdX;
-  float m_fdY;
-
-  // Right and bottom borders relative to the object's size
-  float m_fBorderX;
-  float m_fBorderY;
-
-  // Client width and height
-  float m_ClientAreaWidth;
-  float m_ClientAreaHeight;
+  float m_fFactor; // Scaling factor applied to the object
+  float m_fAngleCumulative; // Cumulative angular rotation applied to the object
+  float m_fAngleApplied; // Current angular rotation applied to object
 };

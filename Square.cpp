@@ -83,11 +83,7 @@ void CSquare::Paint()
 
         rotateMatrix = D2D1::Matrix3x2F::Rotation(
             m_fAngleCumulative,
-            D2D1::Point2F(
-                m_fXR + m_fWidth/2.0f,
-                m_fYR + m_fHeight/2.0f
-            )
-        );
+            (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
 
         m_spRT->SetTransform(&rotateMatrix);
 
@@ -98,42 +94,23 @@ void CSquare::Paint()
         m_pGlBrush = m_d2dDriver->get_GradBrush(CD2DDriver::GRB_Glossy);
 
         // Set positions of gradients based on the new coordinates of the objecs
+        m_currBrush->SetStartPoint(mRenderPos.to<D2D1_POINT_2F>());
+        m_currBrush->SetEndPoint(D2D1::Point2F(
+            mRenderPos.x,
+            mRenderPos.y + mSize.y));
 
-        m_currBrush->SetStartPoint(
-            D2D1::Point2F(
-                m_fXR,
-                m_fYR
-            )
-        );
-
-        m_currBrush->SetEndPoint(
-            D2D1::Point2F(
-                m_fXR,
-                m_fYR + m_fHeight
-            )
-        );
-
-        m_pGlBrush->SetStartPoint(
-            D2D1::Point2F(
-                m_fXR,
-                m_fYR
-            )
-        );
-
-        m_pGlBrush->SetEndPoint(
-            D2D1::Point2F(
-                m_fXR + m_fWidth/15.0f,
-                m_fYR + m_fHeight/2.0f
-            )
-        );
+        m_pGlBrush->SetStartPoint(mRenderPos.to<D2D1_POINT_2F>());  
+        m_pGlBrush->SetEndPoint(D2D1::Point2F(
+            mRenderPos.x + mSize.x/15.0f,
+            mRenderPos.y + mSize.y/2.0f));
 
         // Create rectangle to draw
 
         D2D1_RECT_F rectangle = D2D1::RectF(
-            m_fXR,
-            m_fYR,
-            m_fXR+m_fWidth,
-            m_fYR+m_fHeight
+            mRenderPos.x,
+            mRenderPos.y,
+            mRenderPos.x+mSize.x,
+            mRenderPos.y+mSize.y
         );
 
         D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
@@ -144,10 +121,10 @@ void CSquare::Paint()
         // Create glossy effect
 
         D2D1_RECT_F glossyRect = D2D1::RectF(
-            m_fXR+fGlOffset,
-            m_fYR+fGlOffset,
-            m_fXR+m_fWidth-fGlOffset,
-            m_fYR+m_fHeight/2.0f
+            mRenderPos.x+fGlOffset,
+            mRenderPos.y+fGlOffset,
+            mRenderPos.x+mSize.x-fGlOffset,
+            mRenderPos.y+mSize.y/2.0f
         );
 
         D2D1_ROUNDED_RECT glossyRoundedRect = D2D1::RoundedRect(
