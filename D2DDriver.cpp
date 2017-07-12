@@ -146,6 +146,7 @@ HRESULT CD2DDriver::CreateDeviceResources() {
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DimGray), &m_spTextFgBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::MediumSlateBlue), &m_spSomePinkishBlueBrush);
         m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::Black), &m_spBlackBrush);
+        m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::White), &m_spWhiteBrush);
     }
 
     return hr;
@@ -178,10 +179,11 @@ HRESULT CD2DDriver::RenderBackground(FLOAT clientWidth, FLOAT clientHeight) {
         m_spBGBrush
         );
 
+    m_spTransparentWhiteBrush->SetOpacity(0.015f);
+
 #if 0
     // Randomly generate transparent shapes for
     // added effect to the background
-    m_spTransparentWhiteBrush->SetOpacity(0.015f);
     D2D1_RECT_F square;
     D2D1_ROUNDED_RECT roundedSquare;
     D2D_MATRIX_3X2_F rotateMatrix;
@@ -241,6 +243,7 @@ VOID CD2DDriver::DiscardDeviceResources() {
     m_spCornflowerBrush.Release();
     m_spSomePinkishBlueBrush.Release();
     m_spBlackBrush.Release();
+    m_spWhiteBrush.Release();
 }	
 
 HRESULT CD2DDriver::CreateRenderTarget() {
@@ -346,9 +349,9 @@ void CD2DDriver::RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len)
 
 void CD2DDriver::RenderTiltedRect(Point2F base, float distance, float degAngle, Point2F size, ID2D1Brush* pBrush)
 {
-  const auto middleOfRectNearBase = base + rotateDeg({distance, 0.f}, degAngle);
-  const auto halfRectHeightR = rotateDeg(Point2F{0.f, size.y/2}, degAngle);
-  const auto rectLengthR = rotateDeg(Point2F{size.x, 0.f}, degAngle);
+  const auto middleOfRectNearBase = base + rotateDeg(Vec2Right(distance), degAngle);
+  const auto halfRectHeightR = rotateDeg(Vec2Up(size.y/2), degAngle);
+  const auto rectLengthR = rotateDeg(Vec2Right(size.x), degAngle);
   const auto p1 = middleOfRectNearBase + halfRectHeightR;
   const auto p2 = middleOfRectNearBase - halfRectHeightR;
   const auto p3 = p2 + rectLengthR;

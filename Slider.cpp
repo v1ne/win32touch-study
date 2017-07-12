@@ -28,55 +28,56 @@ public:
     float sumScale, float sumExpansion, float sumRotation) {}
 
   void Paint() override {
-    const auto radius = 300.f;
-    D2D1_ELLIPSE background = {Center().to<D2D1_POINT_2F>(), radius, radius};
-    m_d2dDriver->m_spD2DFactory->CreateEllipseGeometry(background, &mBackground);
-    m_spRT->FillGeometry(mBackground, m_d2dDriver->m_spSomePinkishBlueBrush);
 
+    const auto pos = Center() + Point2F{350.f, 350.f};
+    const auto outerRadius = 300.f;
+    const auto innerRadius = 200.f;
+    D2D1_ELLIPSE background = {pos.to<D2D1_POINT_2F>(), outerRadius, outerRadius};
+    m_d2dDriver->m_spD2DFactory->CreateEllipseGeometry(background, &mBackground);
+    m_spRT->FillGeometry(mBackground, m_d2dDriver->m_spTransparentWhiteBrush);
+
+    m_spRT->FillEllipse({pos.to<D2D1_POINT_2F>(), innerRadius, innerRadius}, m_d2dDriver->m_spWhiteBrush);
+    m_spRT->FillEllipse({pos.to<D2D1_POINT_2F>(), 30.f, 30.f}, m_d2dDriver->m_spDarkGreyBrush);
+
+    const auto markSize = Point2F{10.f, 1.f};
+    for(float i = 0; i < 360.f; i += 3.6f) {
+      m_d2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, i, markSize, m_d2dDriver->m_spDarkGreyBrush);
+    }
+
+    for(auto triangleAngle = 0.f; triangleAngle < 360; triangleAngle += 20) {
+      const auto triangleStrokeSize = Point2F{16.f, 4.f};
+      const auto vecToTriangle = rotateDeg(Vec2Right(innerRadius), triangleAngle);
+      m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle + 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
+      m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle - 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
+    }
+
+#if 0
     ID2D1PathGeometryPtr pathGeometry;
     auto hr = m_d2dDriver->m_spD2DFactory->CreatePathGeometry(&pathGeometry);
     if (!SUCCEEDED(hr)) {
       return;
     }
-
     ID2D1GeometrySink *pSink = NULL;
     hr = pathGeometry->Open(&pSink);
     if (SUCCEEDED(hr)) {
       pSink->SetFillMode(D2D1_FILL_MODE_WINDING);
 
-      pSink->BeginFigure(
-        D2D1::Point2F(100, 300), // Start point of the top half circle
-        D2D1_FIGURE_BEGIN_FILLED
-        );
+      pSink->BeginFigure(pos.to<D2D_POINT_2F>(), D2D1_FIGURE_BEGIN_FILLED);
 
-      // Add the top half circle
       pSink->AddArc(
         D2D1::ArcSegment(
-        D2D1::Point2F(400, 300), // end point of the top half circle, also the start point of the bottom half circle
+        D2D1::Point2F(200, 200), // end point of the top half circle, also the start point of the bottom half circle
         D2D1::SizeF(150, 150), // radius
         0.0f, // rotation angle
         D2D1_SWEEP_DIRECTION_CLOCKWISE,
-        D2D1_ARC_SIZE_SMALL
-        ));
-
-      // Add the bottom half circle
-      pSink->AddArc(
-        D2D1::ArcSegment(
-        D2D1::Point2F(100, 300), // end point of the bottom half circle
-        D2D1::SizeF(150, 150),   // radius of the bottom half circle, same as previous one.
-        0.0f, // rotation angle
-        D2D1_SWEEP_DIRECTION_CLOCKWISE,
-        D2D1_ARC_SIZE_SMALL
+        D2D1_ARC_SIZE_LARGE
         ));
 
       pSink->EndFigure(D2D1_FIGURE_END_CLOSED);
     }
     hr = pSink->Close();
     m_spRT->FillGeometry(pathGeometry, m_d2dDriver->m_spSomePinkishBlueBrush);
-
-    for(int i = 0; i < 360; i += 30) {
-      m_d2dDriver->RenderTiltedRect({300, 300}, 50, float(i), {10.f, 1.f}, m_d2dDriver->m_spDarkGreyBrush);
-    }
+#endif
   }
 
   bool InRegion(Point2F pos) override {

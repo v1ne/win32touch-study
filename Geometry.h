@@ -70,3 +70,12 @@ Point2F rotateRad(const Point2F p, const float radAngle);
 static Point2F rotateDeg(const Point2F p, const float radAngle) {
   return rotateRad(p, radAngle * (3.14159f / 180.f));
 }
+
+template<typename T>
+static Point2<T> Vec2Up(T length) { return {0.f, length}; }
+template<typename T>
+static Point2<T> Vec2Down(T length) { return {0.f, -length}; }
+template<typename T>
+static Point2<T> Vec2Right(T length) { return {length, 0.f}; }
+template<typename T>
+static Point2<T> Vec2Left(T length) { return {-length, 0.f}; }
