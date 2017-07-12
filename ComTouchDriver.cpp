@@ -202,8 +202,8 @@ VOID CComTouchDriver::DownEvent(CCoreObject* coRef, const TOUCHINPUT* inData, BO
 {
     DWORD dwCursorID = inData->dwID;
     DWORD dwPTime = inData->dwTime;
-    int x = GetLocalizedPointX(inData->x);
-    int y = GetLocalizedPointY(inData->y);
+    auto x = GetLocalizedPointX(inData->x);
+    auto y = GetLocalizedPointY(inData->y);
     BOOL success = TRUE;
 
     // Check that the user has touched within an objects region and feed to the objects manipulation processor
@@ -211,7 +211,7 @@ VOID CComTouchDriver::DownEvent(CCoreObject* coRef, const TOUCHINPUT* inData, BO
     if(coRef->doDrawing->InRegion(x, y))
     {
         // Feed values to the Manipulation Processor
-        success = SUCCEEDED(coRef->manipulationProc->ProcessDownWithTime(dwCursorID, (FLOAT)x, (FLOAT)y, dwPTime));
+        success = SUCCEEDED(coRef->manipulationProc->ProcessDownWithTime(dwCursorID, x, y, dwPTime));
 
         if(success)
         {
@@ -249,8 +249,8 @@ VOID CComTouchDriver::MoveEvent(const TOUCHINPUT* inData)
 {
     DWORD dwCursorID  = inData->dwID;
     DWORD dwPTime = inData->dwTime;
-    int x = GetLocalizedPointX(inData->x);
-    int y = GetLocalizedPointY(inData->y);
+    auto x = GetLocalizedPointX(inData->x);
+    auto y = GetLocalizedPointY(inData->y);
 
     // Get the object associated with this cursor id
     std::map<DWORD, CCoreObject*>::iterator it = m_mCursorObject.find(dwCursorID);
@@ -259,7 +259,7 @@ VOID CComTouchDriver::MoveEvent(const TOUCHINPUT* inData)
         CCoreObject* coRef = (*it).second;
 
         // Feed values into the manipulation processor
-        coRef->manipulationProc->ProcessMoveWithTime(dwCursorID, (FLOAT)x, (FLOAT)y, dwPTime);
+        coRef->manipulationProc->ProcessMoveWithTime(dwCursorID, x, y, dwPTime);
     }
 }
 
@@ -267,8 +267,8 @@ VOID CComTouchDriver::UpEvent(const TOUCHINPUT* inData)
 {
     DWORD dwCursorID = inData->dwID;
     DWORD dwPTime = inData->dwTime;
-    int x = GetLocalizedPointX(inData->x);
-    int y = GetLocalizedPointY(inData->y);
+    auto x = GetLocalizedPointX(inData->x);
+    auto y = GetLocalizedPointY(inData->y);
     BOOL success = FALSE;
 
     // Get the CoreObject associated with this cursor id
@@ -278,7 +278,7 @@ VOID CComTouchDriver::UpEvent(const TOUCHINPUT* inData)
         CCoreObject* coRef = (*it).second;
 
         // Feed values into the manipulation processor
-        success = SUCCEEDED(coRef->manipulationProc->ProcessUpWithTime(dwCursorID, (FLOAT)x, (FLOAT)y, dwPTime));
+        success = SUCCEEDED(coRef->manipulationProc->ProcessUpWithTime(dwCursorID, x, y, dwPTime));
     }
 
     // Remove the cursor, object mapping
@@ -336,8 +336,8 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
     m_iCWidth = iCWidth;
     m_iCHeight = iCHeight;
 
-    int widthScaled = GetLocalizedPointX(iCWidth);
-    int heightScaled = GetLocalizedPointY(iCHeight);
+    auto widthScaled = GetLocalizedPointX(iCWidth);
+    auto heightScaled = GetLocalizedPointY(iCHeight);
 
     const float squareDistance = 205;
     const auto numSquareColumns = int(sqrt(NUM_CORE_OBJECTS));
@@ -373,12 +373,12 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
 RenderObjects();
 }
 
-int CComTouchDriver::GetLocalizedPointX(int ptX)
+float CComTouchDriver::GetLocalizedPointX(int ptX)
 {
-    return (int)(ptX * m_dpiScaleX);
+    return ptX * m_dpiScaleX;
 }
 
-int CComTouchDriver::GetLocalizedPointY(int ptY)
+float CComTouchDriver::GetLocalizedPointY(int ptY)
 {
-    return (int)(ptY * m_dpiScaleY);
+    return ptY * m_dpiScaleY;
 }

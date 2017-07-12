@@ -45,7 +45,7 @@ public:
       FLOAT cumulativeRotation) = 0;
     
   virtual void Paint() = 0;
-  virtual bool InRegion(long lX, long lY) = 0;
+  virtual bool InRegion(float x, float y) = 0;
 
   // Public get methods
   virtual float GetPosY() = 0;

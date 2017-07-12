@@ -48,11 +48,11 @@ public:
 
     void ResetState(const float startX, const float startY,
         const int ixClient, const int iyClient,
-        const int iScaledWidth, const int iScaledHeight,
+        float scaledWidth, float scaledHeight,
         const DrawingColor colorChoice);
 
     void Paint() override;
-    bool InRegion(LONG lX, LONG lY) override;
+    bool InRegion(float x, float y) override;
 
     // Public get methods
     float GetPosY() override;
@@ -71,7 +71,7 @@ private:
     void Rotate(const float fAngle);
 
     void RotateVector(float* vector, float* tVector, float fAngle);
-    void ComputeElasticPoint(float fIPt, float* fRPt, int iDimension);
+    void ComputeElasticPoint(float fIPt, float* fRPt, float fBorderSize);
     void UpdateBorders();
     void EnsureVisible();
 
@@ -119,10 +119,10 @@ private:
     float m_fdY;
 
     // Right and bottom borders relative to the object's size
-    int m_iBorderX;
-    int m_iBorderY;
+    float m_fBorderX;
+    float m_fBorderY;
 
     // Client width and height
-    int m_iCWidth;
-    int m_iCHeight;
+    float m_ClientAreaWidth;
+    float m_ClientAreaHeight;
 };

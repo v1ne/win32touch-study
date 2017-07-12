@@ -107,13 +107,13 @@ void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX,
 
 void CSlider::ResetState(const float startX, const float startY,
   const int ixClient, const int iyClient,
-  const int iScaledWidth, const int iScaledHeight,
+  float scaledWidth, float scaledHeight,
   const int iInitialWidth, const int iInitialHeight)
 {
   // Set width and height of the client area
   // must adjust for dpi aware
-  m_iCWidth = iScaledWidth;
-  m_iCHeight = iScaledHeight;
+  m_ClientAreaWidth = scaledWidth;
+  m_ClientAreaHeight = scaledHeight;
 
   // Initialize width height of object
   m_fWidth   = float(iInitialWidth);
@@ -285,8 +285,8 @@ void CSlider::Translate(float fdx, float fdy, bool bInertia)
 
   if (bInertia)
   {
-    ComputeElasticPoint(m_fXI, &m_fXR, m_iBorderX);
-    ComputeElasticPoint(m_fYI, &m_fYR, m_iBorderY);
+    ComputeElasticPoint(m_fXI, &m_fXR, m_fBorderX);
+    ComputeElasticPoint(m_fYI, &m_fYR, m_fBorderY);
   }
   else
   {
@@ -300,8 +300,8 @@ void CSlider::Translate(float fdx, float fdy, bool bInertia)
 
 void CSlider::EnsureVisible()
 {
-  m_fXR = max(0,min(m_fXI, (float)m_iCWidth-m_fWidth));
-  m_fYR = max(0,min(m_fYI, (float)m_iCHeight-m_fHeight));
+  m_fXR = max(0,min(m_fXI, (float)m_ClientAreaWidth-m_fWidth));
+  m_fYR = max(0,min(m_fYI, (float)m_ClientAreaHeight-m_fHeight));
   RestoreRealPosition();
 }
 
@@ -327,8 +327,8 @@ void CSlider::Scale(const float dFactor)
     m_fXI = max(0, m_fXI);
     m_fYI = max(0, m_fYI);
 
-    m_fWidth = min(min(m_iCWidth, m_iCHeight), m_fWidth);
-    m_fHeight = min(min(m_iCWidth, m_iCHeight), m_fHeight);
+    m_fWidth = min(min(m_ClientAreaWidth, m_ClientAreaHeight), m_fWidth);
+    m_fHeight = min(min(m_ClientAreaWidth, m_ClientAreaHeight), m_fHeight);
   }
 
   // Readjust borders for the objects new size
@@ -362,16 +362,10 @@ void CSlider::RotateVector(float *vector, float *tVector, float fAngle)
 }
 
 
-// Hit testing method handled with Direct2D
-bool CSlider::InRegion(LONG x, LONG y)
+bool CSlider::InRegion(float x, float y)
 {
   BOOL b = FALSE;
-
-  m_spRectGeometry->FillContainsPoint(
-    D2D1::Point2F((float)x, (float)y),
-    &m_lastMatrix,
-    &b
-  );
+  m_spRectGeometry->FillContainsPoint(D2D1::Point2F(x, y), &m_lastMatrix, &b);
   return b;
 }
 
@@ -384,26 +378,26 @@ void CSlider::RestoreRealPosition()
 
 void CSlider::UpdateBorders()
 {
-  m_iBorderX = m_iCWidth  - (int)m_fWidth;
-  m_iBorderY = m_iCHeight - (int)m_fHeight;
+  m_fBorderX = m_ClientAreaWidth  - m_fWidth;
+  m_fBorderY = m_ClientAreaHeight - m_fHeight;
 }
 
 // Computes the the elastic point and sets the render coordinates
-void CSlider::ComputeElasticPoint(float fIPt, float *fRPt, int iBSize)
+void CSlider::ComputeElasticPoint(float fIPt, float *fRPt, float fBSize)
 {
   // If the border size is 0 then do not attempt
   // to calculate the render point for elasticity
-  if(iBSize == 0)
+  if(fBSize == 0)
     return;
 
   // Calculate render coordinate for elastic border effect
 
   // Divide the cumulative translation vector by the max border size
-  auto q = int(fabsf(fIPt) / iBSize);
+  auto q = int(fabsf(fIPt) / fBSize);
   int direction = q % 2;
 
   // Calculate the remainder this is the new render coordinate
-  float newPt = fabsf(fIPt) - (float)(iBSize*q);
+  float newPt = fabsf(fIPt) - fBSize*q;
 
   if (direction == DEFAULT_DIRECTION)
   {
@@ -411,7 +405,7 @@ void CSlider::ComputeElasticPoint(float fIPt, float *fRPt, int iBSize)
   }
   else
   {
-    *fRPt = (float)iBSize - newPt;
+    *fRPt = fBSize - newPt;
   }
 }
 

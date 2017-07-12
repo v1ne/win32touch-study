@@ -36,8 +36,8 @@ public:
     VOID ProcessChanges();
     
     // Localizes point for high-DPI
-    int GetLocalizedPointX(int ptX);
-    int GetLocalizedPointY(int ptY);
+    float GetLocalizedPointX(int ptX);
+    float GetLocalizedPointY(int ptY);
 
 private:
     // Renders the objects to the screen
