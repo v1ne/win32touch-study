@@ -8,8 +8,6 @@
 #include "Slider.h"
 #include <math.h>
 
-#define INITIAL_OBJ_WIDTH	50
-#define INITIAL_OBJ_HEIGHT	200
 #define DEFAULT_DIRECTION	0
 
 
@@ -132,15 +130,6 @@ void CSlider::ResetState(const float startX, const float startY,
 
   // Initialize angle
   m_fAngleCumulative = 0.0f;
-
-  if(!m_spRT) return;
-
-  D2D1_SIZE_U  size = {UINT32(ixClient), UINT32(iyClient)};
-  if (FAILED(m_spRT->Resize(size)))
-  {
-    m_d2dDriver->DiscardDeviceResources();
-    InvalidateRect(m_hWnd, NULL, FALSE);
-  }
 }
 
 void CSlider::Paint()

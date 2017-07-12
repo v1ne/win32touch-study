@@ -11,6 +11,7 @@
 #include "CoreObject.h"
 #include <map>
 #include <list>
+#include <vector>
 
 #define NUM_CORE_OBJECTS 4
 #define MOUSE_CURSOR_ID 0
@@ -53,6 +54,7 @@ private:
   
     // List of core objects to be manipulated
     std::list<CCoreObject*> m_lCoreObjects;
+    std::vector<CCoreObject*> m_lCoreObjectsInInitialOrder;
 
     // The client width and height
     int m_iCWidth;

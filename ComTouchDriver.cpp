@@ -112,6 +112,10 @@ BOOL CComTouchDriver::Initialize()
           m_lCoreObjects.push_front(pObject);
         }
     }
+
+    m_lCoreObjectsInInitialOrder.reserve(m_lCoreObjects.size());
+    m_lCoreObjectsInInitialOrder.insert(m_lCoreObjectsInInitialOrder.begin(), m_lCoreObjects.begin(), m_lCoreObjects.end());
+
     return success;
 }
 
@@ -321,16 +325,13 @@ VOID CComTouchDriver::RenderObjects()
 
 VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
 {
-
-    for(const auto& ObjectMapping : m_mCursorObject)
+    D2D1_SIZE_U  size = {UINT32(iCWidth), UINT32(iCHeight)};
+    if (FAILED(m_d2dDriver->GetRenderTarget()->Resize(size)))
     {
-      const auto& pObject = ObjectMapping.second;
-      if(pObject->bIsInertiaActive)
-        pObject->inertiaProc->Complete();
-      else
-        pObject->manipulationProc->CompleteManipulation();
+      m_d2dDriver->DiscardDeviceResources();
+      InvalidateRect(m_hWnd, NULL, FALSE);
+      return;
     }
-    m_mCursorObject.clear();
 
     m_iCWidth = iCWidth;
     m_iCHeight = iCHeight;
@@ -340,7 +341,7 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
 
     const float squareDistance = 205;
     const auto numSquareColumns = int(sqrt(NUM_CORE_OBJECTS));
-    auto iObject = m_lCoreObjects.rbegin();
+    auto iObject = m_lCoreObjectsInInitialOrder.rbegin();
     for(int i = 0; i < NUM_CORE_OBJECTS; i++) {
       const auto pos = POINTF{widthScaled - squareDistance * (i % numSquareColumns + 1), heightScaled - squareDistance * (i / numSquareColumns + 1)};
       ((CSquare*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, CSquare::DrawingColor(i % 4));

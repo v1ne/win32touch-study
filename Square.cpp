@@ -96,21 +96,6 @@ void CSquare::ResetState(const float startX, const float startY,
     // Initialize angle
     m_fAngleCumulative = 0.0f;
 
-    if(m_spRT)
-    {
-        HRESULT hr;
-        D2D1_SIZE_U  size;
-        size.width	= ixClient;
-        size.height = iyClient;
-        hr= m_spRT->Resize(size);
-
-        if (FAILED(hr))
-        {
-            m_d2dDriver->DiscardDeviceResources();
-            InvalidateRect(m_hWnd, NULL, FALSE);
-        }
-    }
-
     // Determines what brush to use for drawing this object and 
     // gets the brush from the D2DDriver class
 
