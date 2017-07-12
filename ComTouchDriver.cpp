@@ -341,9 +341,8 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
     const auto numSquareColumns = int(sqrt(NUM_CORE_OBJECTS));
     auto iObject = m_lCoreObjectsInInitialOrder.rbegin();
     for(int i = 0; i < NUM_CORE_OBJECTS; i++) {
-      const auto pos = Point2F{
-        clientArea.x - squareSize.x * (i % numSquareColumns + 1),
-        clientArea.y - squareSize.y * (i / numSquareColumns + 1)};
+      const auto pos = clientArea - squareSize.dot(
+        Point2I{i % numSquareColumns + 1, i / numSquareColumns + 1});
       ((CSquare*)(*iObject)->doDrawing)->ResetState(pos, clientArea, squareSize);
       ++iObject;
     }
@@ -353,9 +352,8 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
     const auto sliderDistance = sliderSize + sliderBorder;
     const auto numSliderColumns = int(sqrt(NUM_SLIDERS * sliderDistance.y / sliderDistance.x));
     for(int i = 0; i < NUM_SLIDERS; i++) {
-      const auto pos = Point2F{
-        sliderBorder.x + sliderDistance.x * (i % numSliderColumns),
-        sliderBorder.y + sliderDistance.y * (i / numSliderColumns)};
+      const auto pos = sliderBorder + sliderDistance.dot(
+        Point2I{i % numSliderColumns, i / numSliderColumns});
       ((CSlider*)(*iObject)->doDrawing)->ResetState(pos, clientArea, sliderSize);
       ++iObject;
     }

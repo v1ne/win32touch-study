@@ -38,6 +38,10 @@ struct Point2 {
     return {point.x / factor, point.y / factor};
   }
 
+  Self dot(const Self& other) const {
+    return {x * other.x, y * other.y};
+  }
+
   T x;
   T y;
 };
