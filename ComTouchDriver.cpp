@@ -321,6 +321,17 @@ VOID CComTouchDriver::RenderObjects()
 
 VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
 {
+
+    for(const auto& ObjectMapping : m_mCursorObject)
+    {
+      const auto& pObject = ObjectMapping.second;
+      if(pObject->bIsInertiaActive)
+        pObject->inertiaProc->Complete();
+      else
+        pObject->manipulationProc->CompleteManipulation();
+    }
+    m_mCursorObject.clear();
+
     m_iCWidth = iCWidth;
     m_iCHeight = iCHeight;
 

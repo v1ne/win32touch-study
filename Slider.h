@@ -136,6 +136,9 @@ private:
     int m_iCWidth;
     int m_iCHeight;
 
+    float m_bottomPos;
+    float m_sliderHeight;
+
     InteractionMode m_mode;
     SliderType m_type;
 };

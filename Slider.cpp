@@ -83,28 +83,16 @@ void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY)
 
 void CSlider::HandleTouchInAbsoluteInteractionMode(float y)
 {
-    const auto borderWidth = m_fWidth / 4;
-    const auto topBorder = m_fHeight * 10 / 100;
-    const auto topEnd = m_fYR + topBorder;
-    const auto bottomPos = m_fYR+m_fHeight;
-    const auto sliderHeight = bottomPos - topEnd;
-
-    m_value = ::fmaxf(0, ::fminf(1, (bottomPos - y) / sliderHeight));
+  m_value = ::fmaxf(0, ::fminf(1, (m_bottomPos - y) / m_sliderHeight));
 }
 
 
 void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY)
 {
-    const auto borderWidth = m_fWidth / 4;
-    const auto topBorder = m_fHeight * 10 / 100;
-    const auto topEnd = m_fYR + topBorder;
-    const auto bottomPos = m_fYR+m_fHeight;
-    const auto sliderHeight = bottomPos - topEnd;
+  const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * m_fWidth);
 
-    const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * m_fWidth);
-
-    m_rawTouchValue -= deltaY / sliderHeight / dragScalingFactor;
-    m_value = ::fmaxf(0, ::fminf(1, m_rawTouchValue));
+  m_rawTouchValue -= deltaY / m_sliderHeight / dragScalingFactor;
+  m_value = ::fmaxf(0, ::fminf(1, m_rawTouchValue));
 }
 
 
@@ -201,6 +189,9 @@ void CSlider::PaintSlider()
   const auto sliderHeight = bottomPos - topEnd;
   const auto topPos = bottomPos - m_value * sliderHeight;
 
+  m_bottomPos = bottomPos;
+  m_sliderHeight = sliderHeight;
+
   const auto fgRect = D2D1::RectF(m_fXR + borderWidth, topPos, m_fXR+m_fWidth - borderWidth, bottomPos);
   ID2D1RectangleGeometryPtr fgGeometry;
   m_d2dDriver->CreateGeometryRect(fgRect, &fgGeometry);
@@ -218,6 +209,9 @@ void CSlider::PaintKnob()
   const auto border = POINTF{m_fWidth / 8, m_fHeight / 8};
   const auto center = D2D1_POINT_2F{GetCenterX(), GetCenterY()};
   const auto knobRadius = ::fminf((m_fWidth - border.x)/2, (m_fHeight - border.y)/2);
+
+  m_sliderHeight = m_fHeight * 3;
+  m_bottomPos = m_fYR + m_fHeight / 2;
 
   D2D1_ELLIPSE knobOutlineParams = {center, knobRadius, knobRadius};
   ID2D1EllipseGeometryPtr knobOutline;
