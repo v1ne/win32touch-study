@@ -69,7 +69,8 @@ BOOL CComTouchDriver::Initialize()
 
             if(success)
             {
-                success = object->Initialize(new (std::nothrow) CSquare(m_hWnd, m_d2dDriver));
+                success = object->Initialize(new (std::nothrow) CSquare(
+                    m_hWnd, m_d2dDriver, CSquare::DrawingColor(i % 4)));
             }
 
             // Append core object to the list
@@ -202,16 +203,15 @@ VOID CComTouchDriver::DownEvent(CCoreObject* coRef, const TOUCHINPUT* inData, BO
 {
     DWORD dwCursorID = inData->dwID;
     DWORD dwPTime = inData->dwTime;
-    auto x = GetLocalizedPointX(inData->x);
-    auto y = GetLocalizedPointY(inData->y);
+    auto p = LocalizePoint({inData->x, inData->y});
     BOOL success = TRUE;
 
     // Check that the user has touched within an objects region and feed to the objects manipulation processor
 
-    if(coRef->doDrawing->InRegion(x, y))
+    if(coRef->doDrawing->InRegion(p))
     {
         // Feed values to the Manipulation Processor
-        success = SUCCEEDED(coRef->manipulationProc->ProcessDownWithTime(dwCursorID, x, y, dwPTime));
+        success = SUCCEEDED(coRef->manipulationProc->ProcessDownWithTime(dwCursorID, p.x, p.y, dwPTime));
 
         if(success)
         {
@@ -249,8 +249,7 @@ VOID CComTouchDriver::MoveEvent(const TOUCHINPUT* inData)
 {
     DWORD dwCursorID  = inData->dwID;
     DWORD dwPTime = inData->dwTime;
-    auto x = GetLocalizedPointX(inData->x);
-    auto y = GetLocalizedPointY(inData->y);
+    auto p = LocalizePoint({inData->x, inData->y});
 
     // Get the object associated with this cursor id
     std::map<DWORD, CCoreObject*>::iterator it = m_mCursorObject.find(dwCursorID);
@@ -259,7 +258,7 @@ VOID CComTouchDriver::MoveEvent(const TOUCHINPUT* inData)
         CCoreObject* coRef = (*it).second;
 
         // Feed values into the manipulation processor
-        coRef->manipulationProc->ProcessMoveWithTime(dwCursorID, x, y, dwPTime);
+        coRef->manipulationProc->ProcessMoveWithTime(dwCursorID, p.x, p.y, dwPTime);
     }
 }
 
@@ -267,8 +266,7 @@ VOID CComTouchDriver::UpEvent(const TOUCHINPUT* inData)
 {
     DWORD dwCursorID = inData->dwID;
     DWORD dwPTime = inData->dwTime;
-    auto x = GetLocalizedPointX(inData->x);
-    auto y = GetLocalizedPointY(inData->y);
+    auto p = LocalizePoint({inData->x, inData->y});
     BOOL success = FALSE;
 
     // Get the CoreObject associated with this cursor id
@@ -278,7 +276,7 @@ VOID CComTouchDriver::UpEvent(const TOUCHINPUT* inData)
         CCoreObject* coRef = (*it).second;
 
         // Feed values into the manipulation processor
-        success = SUCCEEDED(coRef->manipulationProc->ProcessUpWithTime(dwCursorID, x, y, dwPTime));
+        success = SUCCEEDED(coRef->manipulationProc->ProcessUpWithTime(dwCursorID, p.x, p.y, dwPTime));
     }
 
     // Remove the cursor, object mapping
@@ -336,49 +334,48 @@ VOID CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight)
     m_iCWidth = iCWidth;
     m_iCHeight = iCHeight;
 
-    auto widthScaled = GetLocalizedPointX(iCWidth);
-    auto heightScaled = GetLocalizedPointY(iCHeight);
+    auto unscaledClientArea = Point2F(Point2I(iCWidth, iCHeight));
+    auto clientArea = LocalizePoint({iCWidth, iCHeight});
 
-    const float squareDistance = 205;
+    const auto squareSize = Point2F(200.f);
     const auto numSquareColumns = int(sqrt(NUM_CORE_OBJECTS));
     auto iObject = m_lCoreObjectsInInitialOrder.rbegin();
     for(int i = 0; i < NUM_CORE_OBJECTS; i++) {
-      const auto pos = POINTF{widthScaled - squareDistance * (i % numSquareColumns + 1), heightScaled - squareDistance * (i / numSquareColumns + 1)};
-      ((CSquare*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, CSquare::DrawingColor(i % 4));
+      const auto pos = Point2F{
+        clientArea.x - squareSize.x * (i % numSquareColumns + 1),
+        clientArea.y - squareSize.y * (i / numSquareColumns + 1)};
+      ((CSquare*)(*iObject)->doDrawing)->ResetState(pos, clientArea, squareSize);
       ++iObject;
     }
 
-    const auto sliderBorder = 5;
-    const auto sliderDistance = POINTF{50 + sliderBorder, 200 + sliderBorder};
+    const auto sliderBorder = Point2F{5};
+    const auto sliderSize = Point2F{50, 200};
+    const auto sliderDistance = sliderSize + sliderBorder;
     const auto numSliderColumns = int(sqrt(NUM_SLIDERS * sliderDistance.y / sliderDistance.x));
     for(int i = 0; i < NUM_SLIDERS; i++) {
-      const auto pos = POINTF{sliderBorder + sliderDistance.x * (i % numSliderColumns), sliderBorder + sliderDistance.y * (i / numSliderColumns)};
-      ((CSlider*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, 50, 200);
+      const auto pos = Point2F{
+        sliderBorder.x + sliderDistance.x * (i % numSliderColumns),
+        sliderBorder.y + sliderDistance.y * (i / numSliderColumns)};
+      ((CSlider*)(*iObject)->doDrawing)->ResetState(pos, clientArea, sliderSize);
       ++iObject;
     }
 
-    const auto pos = POINTF{sliderBorder + sliderDistance.x*11, float(sliderBorder)};
-    ((CSlider*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, 50, int(3*sliderDistance.y - sliderBorder));
+    const auto pos = Point2F{sliderBorder.x + sliderDistance.x*11, sliderBorder.y};
+    const auto bigSliderSize = Point2F{50, 3*sliderDistance.y - sliderBorder.y};
+    ((CSlider*)(*iObject)->doDrawing)->ResetState(pos, clientArea, bigSliderSize);
 
-    const auto knobBorder = 2;
-    const auto knobDistance = POINTF{50 + knobBorder, 50 + knobBorder};
+    const auto knobBorder = Point2F{2.f};
+    const auto knobSize = Point2F{50.f};
+    const auto knobDistance = knobSize + knobBorder;
     const auto numKnobColumns = int(sqrt(NUM_KNOBS * knobDistance.y / knobDistance.x));
     for(int i = 0; i < NUM_KNOBS; i++) {
       ++iObject;
-      const auto pos = POINTF{knobBorder + knobDistance.x * (i % numKnobColumns), heightScaled - (knobBorder + knobDistance.y * (1 + i / numKnobColumns))};
-      ((CSlider*)(*iObject)->doDrawing)->ResetState(pos.x, pos.y, iCWidth, iCHeight, widthScaled, heightScaled, 50, 50);
+      const auto pos = Point2F{
+        knobBorder.x + knobDistance.x * (i % numKnobColumns),
+        clientArea.y - (knobBorder.y + knobDistance.y * (1 + i / numKnobColumns))};
+      ((CSlider*)(*iObject)->doDrawing)->ResetState(pos, clientArea, knobSize);
     }
 
 
 RenderObjects();
-}
-
-float CComTouchDriver::GetLocalizedPointX(int ptX)
-{
-    return ptX * m_dpiScaleX;
-}
-
-float CComTouchDriver::GetLocalizedPointY(int ptY)
-{
-    return ptY * m_dpiScaleY;
 }

@@ -34,10 +34,12 @@ public:
     // Processes all changes that include active inertia processors
     // Note: ProcessChanges automatically calls RenderObjects()
     VOID ProcessChanges();
-    
+        
     // Localizes point for high-DPI
-    float GetLocalizedPointX(int ptX);
-    float GetLocalizedPointY(int ptY);
+    inline Point2F CComTouchDriver::LocalizePoint(Point2I p)
+    {
+        return Point2F(p) * m_dpiScaleX;
+    }
 
 private:
     // Renders the objects to the screen

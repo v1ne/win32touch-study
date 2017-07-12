@@ -21,7 +21,7 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationStarted(
     m_coRef->bIsInertiaActive = FALSE;
     KillTimer(m_hWnd, m_iTimerId);
 
-    m_coRef->doDrawing->ManipulationStarted(x, y);
+    m_coRef->doDrawing->ManipulationStarted({x, y});
 
     return S_OK;
 }
@@ -52,20 +52,23 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationDelta(
 
     HRESULT hr = S_OK;
 
-    m_coRef->doDrawing->ManipulationDelta(x, y, translationDeltaX, translationDeltaY,
-      scaleDelta, expansionDelta, rotationDelta, cumulativeTranslationX,
-      cumulativeTranslationY, cumulativeScale, cumulativeExpansion, cumulativeRotation, m_bInertia);
+    m_coRef->doDrawing->ManipulationDelta({x, y},
+      {translationDeltaX, translationDeltaY},
+      scaleDelta, expansionDelta, rotationDelta,
+      {cumulativeTranslationX, cumulativeTranslationY},
+      cumulativeScale, cumulativeExpansion, cumulativeRotation, m_bInertia);
 
      if(!m_bInertia) {
         // Set values for one finger rotations
 
-        auto fPivotRadius =
-            (FLOAT)(sqrt(pow(dObj->GetWidth() / 2, 2) + pow(dObj->GetHeight() / 2, 2)))*0.4f;
-        auto fPivotPtX = dObj->GetCenterX();
-        auto fPivotPtY = dObj->GetCenterY();
+        const auto halfSize = dObj->Size() / 2.f;
 
-        HRESULT hrPPX = mp->put_PivotPointX(fPivotPtX);
-        HRESULT hrPPY = mp->put_PivotPointY(fPivotPtY);
+        auto fPivotRadius =
+            (FLOAT)(sqrt(pow(halfSize.x, 2) + pow(halfSize.y, 2)))*0.4f;
+        const auto pivotPoint = dObj->Center();
+
+        HRESULT hrPPX = mp->put_PivotPointX(pivotPoint.x);
+        HRESULT hrPPY = mp->put_PivotPointY(pivotPoint.y);
         HRESULT hrPR  = mp->put_PivotRadius(fPivotRadius);
         
         if(FAILED(hrPPX) || FAILED(hrPPY) || FAILED(hrPR))
@@ -118,8 +121,9 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
     {
         m_coRef->bIsInertiaActive = FALSE;
     
-        m_coRef->doDrawing->ManipulationCompleted(x, y, cumulativeTranslationX,
-          cumulativeTranslationY, cumulativeScale, cumulativeExpansion, cumulativeRotation);
+        m_coRef->doDrawing->ManipulationCompleted({x, y},
+          {cumulativeTranslationX, cumulativeTranslationY},
+          cumulativeScale, cumulativeExpansion, cumulativeRotation);
 
         // Stop timer that handles inertia
         KillTimer(m_hWnd, m_iTimerId);

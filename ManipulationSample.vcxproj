@@ -183,6 +183,7 @@
     <ClCompile Include="ComTouchDriver.cpp" />
     <ClCompile Include="CoreObject.cpp" />
     <ClCompile Include="D2DDriver.cpp" />
+    <ClCompile Include="DrawingObject.cpp" />
     <ClCompile Include="ManipulationEventsink.cpp" />
     <ClCompile Include="ManipulationSample.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level4</WarningLevel>
@@ -198,6 +199,7 @@
     <ClInclude Include="CoreObject.h" />
     <ClInclude Include="D2DDriver.h" />
     <ClInclude Include="DrawingObject.h" />
+    <ClInclude Include="Geometry.h" />
     <ClInclude Include="ManipulationEventsink.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Slider.h" />
