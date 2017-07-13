@@ -79,6 +79,7 @@ bool ViewBase::HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINP
       BOOL bCompleted = FALSE;
       success = SUCCEEDED(mpInertiaProc->Process(&bCompleted));
     }
+    break;
   }
 
   return success;

@@ -39,6 +39,9 @@ VOID        SetTabletInputServiceProperties();
 VOID        FillInputData(TOUCHINPUT* inData, DWORD cursor, DWORD eType, DWORD time, int x, int y);
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR pCmdLine, int nCmdShow) {
+  UNREFERENCED_PARAMETER(pCmdLine);
+  UNREFERENCED_PARAMETER(nCmdShow);
+
   if(FAILED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED)))
   return 0;
 
@@ -54,8 +57,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR pCmdLine, int nCmdS
 
   MSG msg;
   while (GetMessage(&msg, NULL, 0, 0)) {
-  TranslateMessage(&msg);
-  DispatchMessage(&msg);
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
   }
 
   return 1;

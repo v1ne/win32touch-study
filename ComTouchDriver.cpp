@@ -21,7 +21,11 @@ CComTouchDriver::CComTouchDriver(HWND hWnd)
   : mhWnd(hWnd)
 {
   const auto success = SUCCEEDED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED));
+#ifdef _DEBUG
   assert(success);
+#else
+  UNREFERENCED_PARAMETER(success);
+#endif
 }
 
 bool CComTouchDriver::Initialize() {
@@ -181,9 +185,9 @@ void CComTouchDriver::RenderInitialState(Point2I physicalClientArea) {
     ++iObject;
   }
 
-  const auto pos = Point2F{sliderBorder.x + sliderDistance.x*11, sliderBorder.y};
+  const auto bigSliderPos = Point2F{sliderBorder.x + sliderDistance.x*11, sliderBorder.y};
   const auto bigSliderSize = Point2F{50, 3*sliderDistance.y - sliderBorder.y};
-  ((CSlider*)*iObject)->ResetState(pos, clientArea, bigSliderSize);
+  ((CSlider*)*iObject)->ResetState(bigSliderPos, clientArea, bigSliderSize);
 
   const auto knobBorder = Point2F{2.f};
   const auto knobSize = Point2F{50.f};

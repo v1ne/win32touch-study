@@ -68,7 +68,7 @@ using Point2L = Point2<long>;
 using Point2I = Point2<int>;
 
 Point2F rotateRad(const Point2F p, const float radAngle);
-static Point2F rotateDeg(const Point2F p, const float radAngle) {
+static inline Point2F rotateDeg(const Point2F p, const float radAngle) {
   return rotateRad(p, radAngle * (3.14159f / 180.f));
 }
 

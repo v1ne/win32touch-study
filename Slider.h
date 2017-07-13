@@ -35,6 +35,7 @@ private:
   void PaintKnob();
   bool InMyRegion(Point2F pos);
 
+  bool HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPUT* pData) override;
   void HandleTouch(float y, float cumulativeTranslationX, float deltaY);
   void HandleTouchInAbsoluteInteractionMode(float y);
   void HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY);

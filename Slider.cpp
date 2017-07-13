@@ -10,6 +10,7 @@
 #include "Slider.h"
 #include <manipulations.h>
 #include <math.h>
+#include <unordered_map>
 
 
 class DialOnALeash: public CTransformableDrawingObject {
@@ -17,9 +18,76 @@ public:
   DialOnALeash::DialOnALeash(HWND hWnd, CD2DDriver* d2dDriver, CSlider* pParent)
       : CTransformableDrawingObject(hWnd, d2dDriver)
       , mpSlider(pParent) {
-    mpManipulationProc->put_SupportedManipulations(MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_SCALE);
+    mpManipulationProc->put_SupportedManipulations(
+      MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ROTATE);
   }
-  ~DialOnALeash() override {};
+
+  ~DialOnALeash() override {
+    if (!mContactsToTypeMap.empty())
+      mpManipulationProc->CompleteManipulation();
+
+    if(mIsInertiaActive)
+      mpInertiaProc->Complete();
+  };
+
+  bool HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPUT* pData) override {
+    bool success = false;
+    switch(type) {
+    case DOWN: {
+      switch(mContactsToTypeMap.size()) {
+      case 0:
+        mContactsToTypeMap.emplace(pData->dwID, ContactTypes::PivotPoint);
+        break;
+      case 1:
+        if (mContactsToTypeMap.begin()->second == ContactTypes::PivotPoint)
+          mContactsToTypeMap.emplace(pData->dwID, ContactTypes::OuterHandle);
+        else
+          mContactsToTypeMap.emplace(pData->dwID, ContactTypes::PivotPoint);
+        break;
+      default:
+        mContactsToTypeMap.emplace(pData->dwID, ContactTypes::Ignored);
+        break;
+      }
+
+      success = SUCCEEDED(mpManipulationProc->ProcessDownWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+      break; }
+
+    case MOVE: {
+      auto iEntry = mContactsToTypeMap.find(pData->dwID);
+      if (iEntry != mContactsToTypeMap.end()) {
+        switch (iEntry->second) {
+        case ContactTypes::PivotPoint:
+          mPos = pos - Size()/2.f;
+          success = true;
+          break;
+        case ContactTypes::OuterHandle:
+          success = SUCCEEDED(mpManipulationProc->ProcessMoveWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+          break;
+        default:
+          break;
+        }
+      } else
+        success = SUCCEEDED(mpManipulationProc->ProcessMoveWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+      break; }
+
+    case UP:
+      mContactsToTypeMap.erase(pData->dwID);
+      success = SUCCEEDED(mpManipulationProc->ProcessUpWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+
+      if (mContactsToTypeMap.empty())
+        mpSlider->HideDial();
+      break;
+
+    case INERTIA:
+      if(mIsInertiaActive) {
+        BOOL bCompleted = FALSE;
+        success = SUCCEEDED(mpInertiaProc->Process(&bCompleted));
+      }
+      break;
+    }
+
+  return success;
+}
 
   void ManipulationStarted(Point2F) override {
   }
@@ -27,16 +95,16 @@ public:
   void ManipulationDelta(ViewBase::ManipDeltaParams params) {
     float rads = 180.0f / 3.14159f;
 
-    //SetManipulationOrigin(params.pos);
+    SetManipulationOrigin(mPos);
     Rotate(params.dRotation * rads);
-    Scale(params.dScale);
+    //Scale(params.dScale);
     //Translate(params.dTranslation, params.isExtrapolated);
 
     const auto rawValue = mpSlider->mRawTouchValue += params.dRotation / (2*3.14159f);
     mpSlider->mValue = ::fmaxf(0, ::fminf(1, rawValue));
   }
 
-  void ManipulationCompleted(ViewBase::ManipCompletedParams params) {
+  void ManipulationCompleted(ViewBase::ManipCompletedParams) {
     mIsShown = false;
   }
 
@@ -80,6 +148,11 @@ public:
 
     const auto identityMatrix = D2D1::Matrix3x2F::Identity();
     mpRenderTarget->SetTransform(&identityMatrix);
+
+
+    mpRenderTarget->FillEllipse({Center().to<D2D1_POINT_2F>(), 30, 30}, mD2dDriver->m_spCornflowerBrush);
+    mpRenderTarget->FillEllipse({Pos().to<D2D1_POINT_2F>(), 30, 30}, mD2dDriver->m_spSomePinkishBlueBrush);
+    mpRenderTarget->FillEllipse({(Pos() + Size()).to<D2D1_POINT_2F>(), 30, 30}, mD2dDriver->m_spSomeGreenishBrush);
   }
 
   bool InRegion(Point2F pos) override {
@@ -97,6 +170,13 @@ public:
   float PivotRadius() override {
     return mSize.x;
   }
+
+  enum class ContactTypes {
+    PivotPoint,
+    OuterHandle,
+    Ignored
+  };
+  std::unordered_map<DWORD, ContactTypes> mContactsToTypeMap;
 
   bool mIsShown = false;
   ID2D1EllipseGeometryPtr mBackground;
@@ -120,6 +200,29 @@ CSlider::~CSlider() {
   HideDial();
 }
 
+bool CSlider::HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPUT* pData) {
+  switch(type) {
+  case DOWN: {
+    auto success = ViewBase::HandleTouchEvent(type, pos, pData);
+    if (mpDial)
+      success &= mpDial->HandleTouchEvent(type, pos, pData);
+    return success; }
+  case INERTIA:
+  case UP: {
+    bool success = true;
+    if (mpDial)
+      success = mpDial->HandleTouchEvent(type, pos, pData);
+    success &= ViewBase::HandleTouchEvent(type, pos, pData);
+    return success; }
+  case MOVE:
+    if(mpDial)
+      return mpDial->HandleTouchEvent(type, pos, pData);
+    else
+      return ViewBase::HandleTouchEvent(type, pos, pData);
+    break;
+  }
+  return false;
+}
 
 void CSlider::ManipulationStarted(Point2F pos) {
   RestoreRealPosition();
@@ -145,9 +248,11 @@ void CSlider::ManipulationDelta(ViewBase::ManipDeltaParams params) {
     Rotate(params.dRotation * rads);
     Scale(params.dScale);
     Translate(params.dTranslation, params.isExtrapolated);
+#if 0
   } else if(mMode == MODE_DIAL) {
     mpDial->ManipulationDelta(params);
     if (!InRegion(params.pos)) mpDial->mIsShown = true;
+#endif
   } else {
     HandleTouch(params.pos.y, params.sumTranslation.x, params.dTranslation.y);
   }
@@ -155,13 +260,17 @@ void CSlider::ManipulationDelta(ViewBase::ManipDeltaParams params) {
 
 
 void CSlider::ManipulationCompleted(ViewBase::ManipCompletedParams params) {
+#if 0
   if(mMode == MODE_DIAL) {
     if(mpDial) mpDial->ManipulationCompleted(params);
     HideDial();
   } else {
+#endif
     if(!gShiftPressed)
       HandleTouch(params.pos.y, params.sumTranslation.x, 0.f);
+#if 0
   }
+#endif
 }
 
 
@@ -289,7 +398,7 @@ void CSlider::MakeDial(Point2F center) {
   else
     mpDial = new DialOnALeash(mhWnd, mD2dDriver, this);
 
-  const auto dialSize = Point2F{200.f};
+  const auto dialSize = Point2F{300.f};
   mpDial->ResetState(center - dialSize/2.f, mClientArea, dialSize);
 }
 

@@ -14,9 +14,8 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationStarted(FLOAT x, F
   UNREFERENCED_PARAMETER(y);
 
   // Stop object if it is in the state of inertia
-
   mpViewObject->mIsInertiaActive = FALSE;
-  KillTimer(mhWnd, mTimerId);
+  KillTimer(mhWnd, ptrdiff_t(mpViewObject));
 
   mpViewObject->ManipulationStarted({x, y});
 
@@ -96,7 +95,7 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
 
       mpViewObject->mIsInertiaActive = TRUE;
 
-      SetTimer(mhWnd, mTimerId, DESIRED_MILLISECONDS, NULL);
+      SetTimer(mhWnd, ptrdiff_t(mpViewObject), DESIRED_MILLISECONDS, NULL);
   }
   else
   {
@@ -106,7 +105,7 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
         {cumulativeTranslationX, cumulativeTranslationY},
         cumulativeScale, cumulativeExpansion, cumulativeRotation});
 
-      KillTimer(mhWnd, mTimerId);
+      KillTimer(mhWnd, ptrdiff_t(mpViewObject));
   }
 
   return hr;

@@ -25,7 +25,6 @@ public:
     , mpManipulationProcessor(pManipulationProcessor)
     , mpInertiaProcessor(pInertiaProcessor)
     , mhWnd(hWnd)
-    , mTimerId((int)(ptrdiff_t)this) // it's unique enough for a hack
     , mpConnPoint(NULL)
     , mRefCount(1)
   {
@@ -70,7 +69,6 @@ private:
   IManipulationProcessor* mpManipulationProcessor; // nullptr for sink on an inertia processor
   IInertiaProcessor* mpInertiaProcessor;
   HWND mhWnd;
-  int mTimerId;
   IConnectionPoint* mpConnPoint;
   volatile unsigned int mRefCount;
   DWORD mID;
