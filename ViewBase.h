@@ -12,8 +12,6 @@
 #include "Geometry.h"
 #include "ManipulationCallbacks.h"
 
-#include <windows.h>
-
 extern bool gShiftPressed;
 
 class ViewBase: public IManipulationCallbacks {
@@ -30,12 +28,10 @@ public:
   inline Point2F Pos() { return mPos; }
   inline Point2F Size() { return mSize; }
   Point2F Center() { return Pos() + Size() / 2.f; }
-
   virtual Point2F PivotPoint() = 0;
   virtual float PivotRadius() = 0;
 
 protected:
-  bool mCanRotate;
   HWND mhWnd;
   CD2DDriver* mD2dDriver;
   ID2D1HwndRenderTargetPtr mpRenderTarget;
@@ -48,6 +44,7 @@ protected:
   CManipulationEventSink* mManipulationEventSink = nullptr;
   IInertiaProcessor* mpInertiaProc = nullptr;
   CManipulationEventSink* mInertiaEventSink = nullptr;
+
 private:
   bool InitializeBase();
 };

@@ -26,9 +26,7 @@ public:
     bool InRegion(Point2F pos) override;
 
 private:
-    // D2D brushes
     ID2D1LinearGradientBrushPtr m_pGlBrush;
     ID2D1LinearGradientBrushPtr m_currBrush;
-
     ID2D1RoundedRectangleGeometryPtr m_spRoundedRectGeometry;
 };

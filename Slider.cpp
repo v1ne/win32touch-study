@@ -8,6 +8,7 @@
 
 #include "Geometry.h"
 #include "Slider.h"
+#include <manipulations.h>
 #include <math.h>
 
 
@@ -16,6 +17,7 @@ public:
   DialOnALeash::DialOnALeash(HWND hWnd, CD2DDriver* d2dDriver, CSlider* pParent)
       : CTransformableDrawingObject(hWnd, d2dDriver)
       , mpSlider(pParent) {
+    mpManipulationProc->put_SupportedManipulations(MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_SCALE);
   }
   ~DialOnALeash() override {};
 
@@ -89,9 +91,8 @@ public:
   }
 
   Point2F PivotPoint() override {
-    return Pos();
+    return mPos;
   }
-
 
   float PivotRadius() override {
     return mSize.x;
@@ -109,7 +110,10 @@ CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionM
   , mMode(mode)
   , mType(type)
   , mValue(::rand() / float(RAND_MAX))
-{ }
+{
+  mpManipulationProc->put_SupportedManipulations(MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ALL
+      & ~MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_SCALE);
+}
 
 
 CSlider::~CSlider() {

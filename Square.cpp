@@ -6,6 +6,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved
 
 #include "Square.h"
+#include <manipulations.h>
 #include <math.h>
 
 #define INITIAL_OBJ_WIDTH	200
@@ -15,6 +16,8 @@
 CSquare::CSquare(HWND hWnd, CD2DDriver* d2dDriver,  const DrawingColor colorChoice)
   : CTransformableDrawingObject(hWnd, d2dDriver)
 {
+  mpManipulationProc->put_SupportedManipulations(MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ALL);
+
   // Determines what brush to use for drawing this object and
   // gets the brush from the D2DDriver class
 

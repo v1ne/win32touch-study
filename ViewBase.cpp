@@ -47,14 +47,6 @@ bool ViewBase::InitializeBase() {
       CLSCTX_INPROC_SERVER, IID_IUnknown, (VOID**)(&mpInertiaProc))))
     return false;
 
-  if(!mCanRotate) {
-    auto manipulations = MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ALL;
-    // TODO: Besser lösen!
-    //manipulations &= ~MANIPULATION_ROTATE;
-    manipulations = MANIPULATION_ROTATE;
-    mpManipulationProc->put_SupportedManipulations(manipulations);
-  }
-
   mManipulationEventSink = new CManipulationEventSink(mhWnd, this, mpManipulationProc, mpInertiaProc);
   if(!mManipulationEventSink->SetupConnPt(mpManipulationProc))
     return false;
