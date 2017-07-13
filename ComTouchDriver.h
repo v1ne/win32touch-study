@@ -46,7 +46,7 @@ private:
     void MoveEvent(const TOUCHINPUT* inData);
     void UpEvent(const TOUCHINPUT* inData);
 
-    // Map of cursor ids and core obejcts
+    unsigned int mNumTouchContacts = 0;
     std::map<DWORD, ViewBase*> mCursorIdToObjectMap;
   
     // List of core objects to be manipulated

@@ -62,17 +62,27 @@ CComTouchDriver::~CComTouchDriver() {
 }
 
 void CComTouchDriver::ProcessInputEvent(const TOUCHINPUT* pData) {
-  DWORD dwCursorID = pData->dwID;
-  DWORD dwEvent = pData->dwFlags;
+  auto cursorId = pData->dwID;
 
-  if(dwEvent & TOUCHEVENTF_DOWN) {
+  // Skip spurious mouse events if there are touch valid points
+  if (cursorId == MOUSE_CURSOR_ID && mNumTouchContacts)
+    return;
+
+  auto flags = pData->dwFlags;
+  if(flags & TOUCHEVENTF_DOWN) {
+    if (cursorId != MOUSE_CURSOR_ID)
+      mNumTouchContacts++;
+
     for(const auto& pObject: mCoreObjects) {
       auto found = DownEvent(pObject, pData);
       if(found) break;
     }
-  } else if(dwEvent & TOUCHEVENTF_MOVE) {
+  } else if(flags & TOUCHEVENTF_MOVE) {
     MoveEvent(pData);
-  } else if(dwEvent & TOUCHEVENTF_UP) {
+  } else if(flags & TOUCHEVENTF_UP) {
+    if (cursorId != MOUSE_CURSOR_ID)
+      mNumTouchContacts--;
+
     UpEvent(pData);
   }
 }
@@ -97,22 +107,22 @@ bool CComTouchDriver::DownEvent(ViewBase* pView, const TOUCHINPUT* pData) {
 }
 
 void CComTouchDriver::MoveEvent(const TOUCHINPUT* pData) {
-  DWORD dwCursorID = pData->dwID;
+  DWORD cursorId = pData->dwID;
   auto p = PhysicalToLogical({pData->x, pData->y});
 
-  auto iEntry = mCursorIdToObjectMap.find(dwCursorID);
+  auto iEntry = mCursorIdToObjectMap.find(cursorId);
   if(iEntry != mCursorIdToObjectMap.end())
     iEntry->second->HandleTouchEvent(ViewBase::MOVE, p, pData);
 }
 
 void CComTouchDriver::UpEvent(const TOUCHINPUT* pData) {
-  DWORD dwCursorID = pData->dwID;
+  DWORD cursorId = pData->dwID;
   auto p = PhysicalToLogical({pData->x, pData->y});
 
-  auto iEntry = mCursorIdToObjectMap.find(dwCursorID);
+  auto iEntry = mCursorIdToObjectMap.find(cursorId);
   if(iEntry != mCursorIdToObjectMap.end()) {
     iEntry->second->HandleTouchEvent(ViewBase::UP, p, pData);
-    mCursorIdToObjectMap.erase(dwCursorID);
+    mCursorIdToObjectMap.erase(cursorId);
   }
 }
 
