@@ -13,7 +13,6 @@
 #include <manipulations.h>
 
 #define NUM_CORE_OBJECTS 4
-#define DEFAULT_PPI 96.0f
 
 #define NUM_SLIDERS 33
 #define NUM_KNOBS 25
@@ -26,39 +25,36 @@ CComTouchDriver::CComTouchDriver(HWND hWnd)
 }
 
 bool CComTouchDriver::Initialize() {
-  mDpiScale = float(DEFAULT_PPI)/::GetDpiForWindow(mhWnd);
+  mPhysicalPointsPerLogicalPoint = ::GetDpiForWindow(mhWnd) / 96.f;
 
-  mD2dDriver = new (std::nothrow) CD2DDriver(mhWnd);
+  mD2dDriver = new CD2DDriver(mhWnd);
   auto success = SUCCEEDED(mD2dDriver->Initialize());
   if (!success) return false;
 
   for(int i = 0; i < NUM_CORE_OBJECTS; i++) {
-    auto pObject = new CSquare(mhWnd, mD2dDriver, CSquare::DrawingColor(i % 4));
-    m_lCoreObjects.push_front(pObject);
+    mCoreObjects.push_front(new CSquare(mhWnd, mD2dDriver, CSquare::DrawingColor(i % 4)));
   }
 
   for (int i = 0; i < NUM_SLIDERS + 1; i++) {
-    auto pObject = new CSlider(mhWnd, mD2dDriver, CSlider::TYPE_SLIDER,
-      i < NUM_SLIDERS ? CSlider::InteractionMode(i % CSlider::NUM_MODES) : CSlider::MODE_RELATIVE);
-    m_lCoreObjects.push_front(pObject);
+    mCoreObjects.push_front(new CSlider(mhWnd, mD2dDriver, CSlider::TYPE_SLIDER,
+      i < NUM_SLIDERS ? CSlider::InteractionMode(i % CSlider::NUM_MODES) : CSlider::MODE_RELATIVE));
   }
 
   for (int i = 0; i < NUM_KNOBS; i++) {
-    auto pObject = new (std::nothrow) CSlider(mhWnd, mD2dDriver,
-      CSlider::TYPE_KNOB, CSlider::InteractionMode(i % CSlider::NUM_MODES));
-    m_lCoreObjects.push_front(pObject);
+    mCoreObjects.push_front(new CSlider(mhWnd, mD2dDriver,
+      CSlider::TYPE_KNOB, CSlider::InteractionMode(i % CSlider::NUM_MODES)));
   }
 
-  m_lCoreObjectsInInitialOrder.reserve(m_lCoreObjects.size());
-  m_lCoreObjectsInInitialOrder.insert(m_lCoreObjectsInInitialOrder.begin(), m_lCoreObjects.begin(), m_lCoreObjects.end());
+  mCoreObjectsInInitialOrder.reserve(mCoreObjects.size());
+  mCoreObjectsInInitialOrder.insert(mCoreObjectsInInitialOrder.begin(), mCoreObjects.begin(), mCoreObjects.end());
 
   return success;
 }
 
 CComTouchDriver::~CComTouchDriver() {
-  for(const auto& pObject: m_lCoreObjects)
+  for(const auto& pObject: mCoreObjects)
     delete pObject;
-  m_lCoreObjects.clear();
+  mCoreObjects.clear();
 
   delete mD2dDriver;
 
@@ -70,39 +66,33 @@ void CComTouchDriver::ProcessInputEvent(const TOUCHINPUT* inData) {
   DWORD dwEvent = inData->dwFlags;
 
   if(dwEvent & TOUCHEVENTF_DOWN) {
-    for(const auto& pObject: m_lCoreObjects) {
+    for(const auto& pObject: mCoreObjects) {
       auto found = DownEvent(pObject, inData);
       if(found) break;
     }
   } else if(dwEvent & TOUCHEVENTF_MOVE) {
-    if(m_mCursorObject.count(inData->dwID) > 0)
-      MoveEvent(inData);
+    MoveEvent(inData);
   } else if(dwEvent & TOUCHEVENTF_UP) {
-    if(m_mCursorObject.count(inData->dwID) > 0) {
-      UpEvent(inData);
-    }
+    UpEvent(inData);
   }
 }
 
 bool CComTouchDriver::DownEvent(ViewBase* pView, const TOUCHINPUT* inData) {
   DWORD dwCursorID = inData->dwID;
-  DWORD dwPTime = inData->dwTime;
-  auto p = LocalizePoint({inData->x, inData->y});
-
-  // Check that the user has touched within an objects region and feed to the objects manipulation processor
+  auto p = PhysicalToLogicalPoint({inData->x, inData->y});
 
   if(!pView->InRegion(p)) {
     return false;
   }
 
-  if(FAILED(pView->mManipulationProc->ProcessDownWithTime(dwCursorID, p.x, p.y, dwPTime))) {
+  if(FAILED(pView->mManipulationProc->ProcessDownWithTime(dwCursorID, p.x, p.y, inData->dwTime))) {
     return false;
   }
 
-  m_mCursorObject.insert(std::pair<DWORD, ViewBase*>(dwCursorID, pView));
+  mCursorIdToObjectMap.insert(std::pair<DWORD, ViewBase*>(dwCursorID, pView));
 
-  m_lCoreObjects.remove(pView);
-  m_lCoreObjects.push_front(pView);
+  mCoreObjects.remove(pView);
+  mCoreObjects.push_front(pView);
 
   RenderObjects(); // Renders objects to bring new object to front
 
@@ -110,27 +100,27 @@ bool CComTouchDriver::DownEvent(ViewBase* pView, const TOUCHINPUT* inData) {
 }
 
 void CComTouchDriver::MoveEvent(const TOUCHINPUT* inData) {
-  DWORD dwCursorID  = inData->dwID;
-  auto p = LocalizePoint({inData->x, inData->y});
+  DWORD dwCursorID = inData->dwID;
+  auto p = PhysicalToLogicalPoint({inData->x, inData->y});
 
-  auto iEntry = m_mCursorObject.find(dwCursorID);
-  if(iEntry != m_mCursorObject.end())
+  auto iEntry = mCursorIdToObjectMap.find(dwCursorID);
+  if(iEntry != mCursorIdToObjectMap.end())
     iEntry->second->mManipulationProc->ProcessMoveWithTime(dwCursorID, p.x, p.y, inData->dwTime);
 }
 
 void CComTouchDriver::UpEvent(const TOUCHINPUT* inData) {
   DWORD dwCursorID = inData->dwID;
-  auto p = LocalizePoint({inData->x, inData->y});
+  auto p = PhysicalToLogicalPoint({inData->x, inData->y});
 
-  auto iEntry = m_mCursorObject.find(dwCursorID);
-  if(iEntry != m_mCursorObject.end()) {
+  auto iEntry = mCursorIdToObjectMap.find(dwCursorID);
+  if(iEntry != mCursorIdToObjectMap.end()) {
     iEntry->second->mManipulationProc->ProcessUpWithTime(dwCursorID, p.x, p.y, inData->dwTime);
-    m_mCursorObject.erase(dwCursorID);
+    mCursorIdToObjectMap.erase(dwCursorID);
   }
 }
 
 void CComTouchDriver::RunInertiaProcessorsAndRender() {
-  for(const auto& pObject: m_lCoreObjects) {
+  for(const auto& pObject: mCoreObjects) {
     if(pObject->mIsInertiaActive == TRUE) {
       BOOL bCompleted = FALSE;
       pObject->mInertiaProc->Process(&bCompleted);
@@ -147,7 +137,7 @@ void CComTouchDriver::RenderObjects() {
   mD2dDriver->BeginDraw();
   mD2dDriver->RenderBackground((FLOAT)m_iCWidth, (FLOAT)m_iCHeight);
 
-  for(auto iObject = m_lCoreObjects.rbegin(); iObject != m_lCoreObjects.rend(); ++iObject)
+  for(auto iObject = mCoreObjects.rbegin(); iObject != mCoreObjects.rend(); ++iObject)
     (*iObject)->Paint();
 
   mD2dDriver->EndDraw();
@@ -166,11 +156,11 @@ void CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight) 
   m_iCHeight = iCHeight;
 
   auto unscaledClientArea = Point2F(Point2I(iCWidth, iCHeight));
-  auto clientArea = LocalizePoint({iCWidth, iCHeight});
+  auto clientArea = PhysicalToLogicalPoint({iCWidth, iCHeight});
 
   const auto squareSize = Point2F(200.f);
   const auto numSquareColumns = int(sqrt(NUM_CORE_OBJECTS));
-  auto iObject = m_lCoreObjectsInInitialOrder.rbegin();
+  auto iObject = mCoreObjectsInInitialOrder.rbegin();
   for(int i = 0; i < NUM_CORE_OBJECTS; i++) {
     const auto pos = clientArea - squareSize.dot(
       Point2I{i % numSquareColumns + 1, i / numSquareColumns + 1});

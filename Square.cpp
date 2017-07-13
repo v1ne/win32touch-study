@@ -20,19 +20,19 @@ CSquare::CSquare(HWND hWnd, CD2DDriver* d2dDriver,  const DrawingColor colorChoi
 
   switch (colorChoice){
       case Blue:
-          m_currBrush = m_d2dDriver->get_GradBrush(CD2DDriver::GRB_Blue);
+          m_currBrush = mD2dDriver->get_GradBrush(CD2DDriver::GRB_Blue);
           break;
       case Orange:
-          m_currBrush = m_d2dDriver->get_GradBrush(CD2DDriver::GRB_Orange);
+          m_currBrush = mD2dDriver->get_GradBrush(CD2DDriver::GRB_Orange);
           break;
       case Green:
-          m_currBrush = m_d2dDriver->get_GradBrush(CD2DDriver::GRB_Green);
+          m_currBrush = mD2dDriver->get_GradBrush(CD2DDriver::GRB_Green);
           break;
       case Red:
-          m_currBrush = m_d2dDriver->get_GradBrush(CD2DDriver::GRB_Red);
+          m_currBrush = mD2dDriver->get_GradBrush(CD2DDriver::GRB_Red);
           break;
       default:
-          m_currBrush = m_d2dDriver->get_GradBrush(CD2DDriver::GRB_Blue);
+          m_currBrush = mD2dDriver->get_GradBrush(CD2DDriver::GRB_Blue);
   }
 
 }
@@ -79,13 +79,13 @@ void CSquare::Paint()
         m_fAngleCumulative,
         (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
 
-    m_spRT->SetTransform(&rotateMatrix);
+    mpRenderTarget->SetTransform(&rotateMatrix);
 
     // Store the rotate matrix to be used in hit testing
     m_lastMatrix = rotateMatrix;
 
     // Get glossy brush
-    m_pGlBrush = m_d2dDriver->get_GradBrush(CD2DDriver::GRB_Glossy);
+    m_pGlBrush = mD2dDriver->get_GradBrush(CD2DDriver::GRB_Glossy);
 
     // Set positions of gradients based on the new coordinates of the objecs
     m_currBrush->SetStartPoint(mRenderPos.to<D2D1_POINT_2F>());
@@ -128,25 +128,25 @@ void CSquare::Paint()
     );
 
     // D2D requires that a geometry is created for the rectangle
-    m_d2dDriver->m_spD2DFactory->CreateRoundedRectangleGeometry(
+    mD2dDriver->m_spD2DFactory->CreateRoundedRectangleGeometry(
         roundedRect,
         &m_spRoundedRectGeometry
     );
 
     // Fill the geometry that was created
-    m_spRT->FillGeometry(
+    mpRenderTarget->FillGeometry(
         m_spRoundedRectGeometry,
         m_currBrush
     );
 
     // Draw glossy effect
-    m_spRT->FillRoundedRectangle(
+    mpRenderTarget->FillRoundedRectangle(
         &glossyRoundedRect,
         m_pGlBrush
     );
 
     // Restore our transform to nothing
-    m_spRT->SetTransform(&identityMatrix);
+    mpRenderTarget->SetTransform(&identityMatrix);
 }
 
 // Hit testing method handled with Direct2D

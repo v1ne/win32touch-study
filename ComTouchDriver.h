@@ -32,9 +32,9 @@ public:
     void RunInertiaProcessorsAndRender();
         
     // Localizes point for high-DPI
-    inline Point2F CComTouchDriver::LocalizePoint(Point2I p)
+    inline Point2F CComTouchDriver::PhysicalToLogicalPoint(Point2I p)
     {
-        return Point2F(p) * mDpiScale;
+        return Point2F(p) / mPhysicalPointsPerLogicalPoint;
     }
 
 private:
@@ -48,18 +48,17 @@ private:
     void UpEvent(const TOUCHINPUT* inData);
 
     // Map of cursor ids and core obejcts
-    std::map<DWORD, ViewBase*> m_mCursorObject;
+    std::map<DWORD, ViewBase*> mCursorIdToObjectMap;
   
     // List of core objects to be manipulated
-    std::list<ViewBase*> m_lCoreObjects;
-    std::vector<ViewBase*> m_lCoreObjectsInInitialOrder;
+    std::list<ViewBase*> mCoreObjects;
+    std::vector<ViewBase*> mCoreObjectsInInitialOrder;
 
     // The client width and height
     int m_iCWidth;
     int m_iCHeight;
 
-    // Scale for converting between dpi's
-    float mDpiScale = 1.0f;
+    float mPhysicalPointsPerLogicalPoint = 1.0f;
 
     CD2DDriver* mD2dDriver;
 

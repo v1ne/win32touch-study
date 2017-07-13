@@ -34,9 +34,8 @@ public:
 protected:
   bool mCanRotate;
   HWND mhWnd;
-  HWND m_hWnd = mhWnd;
-  CD2DDriver* m_d2dDriver;
-  ID2D1HwndRenderTargetPtr m_spRT;
+  CD2DDriver* mD2dDriver;
+  ID2D1HwndRenderTargetPtr mpRenderTarget;
 
   // Real top-left coordinate of object
   Point2F mPos;
@@ -50,7 +49,10 @@ private:
 class CTransformableDrawingObject: public ViewBase
 {
 public:
-  CTransformableDrawingObject(HWND hWnd, CD2DDriver* d2dDriver) : ViewBase(hWnd, d2dDriver) {}
+  CTransformableDrawingObject(HWND hWnd, CD2DDriver* d2dDriver)
+    : ViewBase(hWnd, d2dDriver)
+  {}
+
   void ResetState(Point2F start, Point2F clientArea, Point2F initialSize);
 
   Point2F PivotPoint() override;
@@ -67,14 +69,12 @@ protected:
   void UpdateBorders(); 
   void EnsureVisible();
 
-  // Keeps the last matrix used to perform the rotate transform
-  D2D_MATRIX_3X2_F m_lastMatrix = {};
-
   Point2F mManipulationStartPos; // Coordinates of where manipulation started
   Point2F mRenderPos; // Rendered top, left coordinates of object
   Point2F mRightBottomBorders; // Right and bottom borders relative to the object's size
   Point2F mClientArea; // Client width and height
 
+  D2D_MATRIX_3X2_F m_lastMatrix = {}; // Keeps the last matrix used to perform the rotate transform
   float m_fFactor; // Scaling factor applied to the object
   float m_fAngleCumulative; // Cumulative angular rotation applied to the object
   float m_fAngleApplied; // Current angular rotation applied to object

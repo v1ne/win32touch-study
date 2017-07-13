@@ -30,8 +30,8 @@ public:
     Scale(params.dScale);
     //Translate(params.dTranslation, params.isExtrapolated);
 
-    const auto rawValue = mpSlider->m_rawTouchValue += params.dRotation / (2*3.14159f);
-    mpSlider->m_value = ::fmaxf(0, ::fminf(1, rawValue));
+    const auto rawValue = mpSlider->mRawTouchValue += params.dRotation / (2*3.14159f);
+    mpSlider->mValue = ::fmaxf(0, ::fminf(1, rawValue));
   }
 
   void ManipulationCompleted(ViewBase::ManipCompletedParams params) {
@@ -42,42 +42,42 @@ public:
     if (!mIsShown)
       return;
 
-    if((m_spRT->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
+    if((mpRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
       return;
 
     const auto rotateMatrix = D2D1::Matrix3x2F::Rotation(
       0,//m_fAngleCumulative,
       (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
 
-    m_spRT->SetTransform(&rotateMatrix);
+    mpRenderTarget->SetTransform(&rotateMatrix);
     m_lastMatrix = rotateMatrix;
 
     const auto pos = Center();
     const auto innerRadius = mSize.x / 2.f;
     const auto outerRadius = innerRadius * 1.5f;
     D2D1_ELLIPSE background = {pos.to<D2D1_POINT_2F>(), outerRadius, outerRadius};
-    m_d2dDriver->m_spD2DFactory->CreateEllipseGeometry(background, &mBackground);
-    m_spRT->FillGeometry(mBackground, m_d2dDriver->m_spTransparentWhiteBrush);
+    mD2dDriver->m_spD2DFactory->CreateEllipseGeometry(background, &mBackground);
+    mpRenderTarget->FillGeometry(mBackground, mD2dDriver->m_spTransparentWhiteBrush);
 
-    m_spRT->FillEllipse({pos.to<D2D1_POINT_2F>(), innerRadius, innerRadius}, m_d2dDriver->m_spWhiteBrush);
-    m_spRT->FillEllipse({pos.to<D2D1_POINT_2F>(), 30.f, 30.f}, m_d2dDriver->m_spDarkGreyBrush);
+    mpRenderTarget->FillEllipse({pos.to<D2D1_POINT_2F>(), innerRadius, innerRadius}, mD2dDriver->m_spWhiteBrush);
+    mpRenderTarget->FillEllipse({pos.to<D2D1_POINT_2F>(), 30.f, 30.f}, mD2dDriver->m_spDarkGreyBrush);
 
     const auto shortMarkSize = Point2F{10.f, 1.f};
     const auto longMarkSize = Point2F{15.f, 1.f};
-    const auto angularOffset = -mpSlider->m_rawTouchValue * 360.f;
+    const auto angularOffset = -mpSlider->mRawTouchValue * 360.f;
     for(float i = 0; i < 360.f; i += 3.6f) {
       auto markSize = (int(i) % 36) == 0 ? longMarkSize : shortMarkSize;
-      m_d2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, i + angularOffset, markSize, m_d2dDriver->m_spDarkGreyBrush);
+      mD2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, i + angularOffset, markSize, mD2dDriver->m_spDarkGreyBrush);
     }
 
     const auto triangleAngle = 180.f;
       const auto triangleStrokeSize = Point2F{16.f, 4.f};
       const auto vecToTriangle = rotateDeg(Vec2Right(innerRadius), triangleAngle);
-      m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle + 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
-      m_d2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle - 45, triangleStrokeSize, m_d2dDriver->m_spBlackBrush);
+      mD2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle + 45, triangleStrokeSize, mD2dDriver->m_spBlackBrush);
+      mD2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle - 45, triangleStrokeSize, mD2dDriver->m_spBlackBrush);
 
     const auto identityMatrix = D2D1::Matrix3x2F::Identity();
-    m_spRT->SetTransform(&identityMatrix);
+    mpRenderTarget->SetTransform(&identityMatrix);
   }
 
   bool InRegion(Point2F pos) override {
@@ -104,9 +104,9 @@ public:
 
 CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode)
   : CTransformableDrawingObject(hWnd, d2dDriver)
-  , m_mode(mode)
-  , m_type(type)
-  , m_value(::rand() / float(RAND_MAX))
+  , mMode(mode)
+  , mType(type)
+  , mValue(::rand() / float(RAND_MAX))
 { }
 
 CSlider::~CSlider() {
@@ -117,9 +117,9 @@ CSlider::~CSlider() {
 void CSlider::ManipulationStarted(Point2F pos) {
   RestoreRealPosition();
 
-  m_rawTouchValue = m_value;
+  mRawTouchValue = mValue;
 
-  if(m_mode == MODE_DIAL) {
+  if(mMode == MODE_DIAL) {
     MakeDial(pos);
     mpDial->mIsShown=true;
     mpDial->ManipulationStarted(pos);
@@ -138,7 +138,7 @@ void CSlider::ManipulationDelta(ViewBase::ManipDeltaParams params) {
     Rotate(params.dRotation * rads);
     Scale(params.dScale);
     Translate(params.dTranslation, params.isExtrapolated);
-  } else if(m_mode == MODE_DIAL) {
+  } else if(mMode == MODE_DIAL) {
     mpDial->ManipulationDelta(params);
     if (!InRegion(params.pos)) mpDial->mIsShown = true;
   } else {
@@ -148,7 +148,7 @@ void CSlider::ManipulationDelta(ViewBase::ManipDeltaParams params) {
 
 
 void CSlider::ManipulationCompleted(ViewBase::ManipCompletedParams params) {
-  if(m_mode == MODE_DIAL) {
+  if(mMode == MODE_DIAL) {
     if(mpDial) mpDial->ManipulationCompleted(params);
     HideDial();
   } else {
@@ -159,7 +159,7 @@ void CSlider::ManipulationCompleted(ViewBase::ManipCompletedParams params) {
 
 
 void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY) {
-  switch(m_mode) {
+  switch(mMode) {
   case MODE_ABSOLUTE:
     HandleTouchInAbsoluteInteractionMode(y);
     break;
@@ -171,15 +171,15 @@ void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY) {
 
 
 void CSlider::HandleTouchInAbsoluteInteractionMode(float y) {
-  m_value = ::fmaxf(0, ::fminf(1, (m_bottomPos - y) / m_sliderHeight));
+  mValue = ::fmaxf(0, ::fminf(1, (mBottomPos - y) / mSliderHeight));
 }
 
 
 void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY) {
   const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * mSize.x);
 
-  m_rawTouchValue -= deltaY / m_sliderHeight / dragScalingFactor;
-  m_value = ::fmaxf(0, ::fminf(1, m_rawTouchValue));
+  mRawTouchValue -= deltaY / mSliderHeight / dragScalingFactor;
+  mValue = ::fmaxf(0, ::fminf(1, mRawTouchValue));
 }
 
 
@@ -188,16 +188,16 @@ void CSlider::Paint() {
     m_fAngleCumulative,
     (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
 
-  m_spRT->SetTransform(&rotateMatrix);
+  mpRenderTarget->SetTransform(&rotateMatrix);
 
   // Store the rotate matrix to be used in hit testing
   m_lastMatrix = rotateMatrix;
 
   const auto bgRect = D2D1::RectF(mRenderPos.x, mRenderPos.y, mRenderPos.x+mSize.x, mRenderPos.y+mSize.y);
-  m_d2dDriver->m_spD2DFactory->CreateRectangleGeometry(bgRect, &m_spRectGeometry);
-  m_spRT->FillGeometry(m_spRectGeometry, m_d2dDriver->m_spLightGreyBrush);
+  mD2dDriver->m_spD2DFactory->CreateRectangleGeometry(bgRect, &mpOutlineGeometry);
+  mpRenderTarget->FillGeometry(mpOutlineGeometry, mD2dDriver->m_spLightGreyBrush);
 
-  switch(m_type) {
+  switch(mType) {
   case TYPE_SLIDER:
     PaintSlider();
     break;
@@ -208,7 +208,7 @@ void CSlider::Paint() {
 
   // Restore our transform to nothing
   const auto identityMatrix = D2D1::Matrix3x2F::Identity();
-  m_spRT->SetTransform(&identityMatrix);
+  mpRenderTarget->SetTransform(&identityMatrix);
 
   if(mpDial) mpDial->Paint();
 }
@@ -221,19 +221,19 @@ void CSlider::PaintSlider()
   const auto topEnd = mRenderPos.y + topBorder;
   const auto bottomPos = mRenderPos.y+mSize.y;
   const auto sliderHeight = bottomPos - topEnd;
-  const auto topPos = bottomPos - m_value * sliderHeight;
+  const auto topPos = bottomPos - mValue * sliderHeight;
 
-  m_bottomPos = bottomPos;
-  m_sliderHeight = sliderHeight;
+  mBottomPos = bottomPos;
+  mSliderHeight = sliderHeight;
 
   const auto fgRect = D2D1::RectF(mRenderPos.x + borderWidth, topPos, mRenderPos.x+mSize.x - borderWidth, bottomPos);
   ID2D1RectangleGeometryPtr fgGeometry;
-  m_d2dDriver->m_spD2DFactory->CreateRectangleGeometry(fgRect, &fgGeometry);
-  m_spRT->FillGeometry(fgGeometry, BrushForMode());
+  mD2dDriver->m_spD2DFactory->CreateRectangleGeometry(fgRect, &fgGeometry);
+  mpRenderTarget->FillGeometry(fgGeometry, BrushForMode());
 
   wchar_t buf[16];
-  wsprintf(buf, L"%d%%", int(m_value*100));
-  m_d2dDriver->RenderText({mRenderPos.x, mRenderPos.y, mRenderPos.x + mSize.x, mRenderPos.y + topBorder}, buf, wcslen(buf));
+  wsprintf(buf, L"%d%%", int(mValue*100));
+  mD2dDriver->RenderText({mRenderPos.x, mRenderPos.y, mRenderPos.x + mSize.x, mRenderPos.y + topBorder}, buf, wcslen(buf));
 }
 
 
@@ -242,31 +242,31 @@ void CSlider::PaintKnob() {
   const auto center = Center().to<D2D1_POINT_2F>();
   const auto knobRadius = ::fminf((mSize.x - border.x)/2, (mSize.y - border.y)/2);
 
-  m_sliderHeight = mSize.y * 3;
-  m_bottomPos = mRenderPos.y + mSize.y / 2;
+  mSliderHeight = mSize.y * 3;
+  mBottomPos = mRenderPos.y + mSize.y / 2;
 
   D2D1_ELLIPSE knobOutlineParams = {center, knobRadius, knobRadius};
   ID2D1EllipseGeometryPtr knobOutline;
-  m_d2dDriver->m_spD2DFactory->CreateEllipseGeometry(knobOutlineParams, &knobOutline);
-  m_spRT->FillGeometry(knobOutline, m_d2dDriver->m_spDarkGreyBrush);
+  mD2dDriver->m_spD2DFactory->CreateEllipseGeometry(knobOutlineParams, &knobOutline);
+  mpRenderTarget->FillGeometry(knobOutline, mD2dDriver->m_spDarkGreyBrush);
 
-  const auto knobMarkAngle = -135.f - m_value * 270;
+  const auto knobMarkAngle = -135.f - mValue * 270;
   const auto markSize = Point2F{10.f, 5.f};
-  m_d2dDriver->RenderTiltedRect(Center(), knobRadius - markSize.x, knobMarkAngle, markSize, BrushForMode());
+  mD2dDriver->RenderTiltedRect(Center(), knobRadius - markSize.x, knobMarkAngle, markSize, BrushForMode());
 
   for(int i = 0; i <= 270; i += 30) {
-    m_d2dDriver->RenderTiltedRect(Center(), knobRadius, float(-135 - i), {3.f, 1.f}, m_d2dDriver->m_spBlackBrush);
+    mD2dDriver->RenderTiltedRect(Center(), knobRadius, float(-135 - i), {3.f, 1.f}, mD2dDriver->m_spBlackBrush);
   }
 
   wchar_t buf[16];
-  wsprintf(buf, L"%d%%", int(m_value*100));
-  m_d2dDriver->RenderText({center.x - mSize.x/3, center.y - border.y, center.x + mSize.x/3, center.y + border.y}, buf, wcslen(buf));
+  wsprintf(buf, L"%d%%", int(mValue*100));
+  mD2dDriver->RenderText({center.x - mSize.x/3, center.y - border.y, center.x + mSize.x/3, center.y + border.y}, buf, wcslen(buf));
 }
 
 
 bool CSlider::InMyRegion(Point2F pos) {
   BOOL b = FALSE;
-  m_spRectGeometry->FillContainsPoint(pos.to<D2D1_POINT_2F>(), &m_lastMatrix, &b);
+  mpOutlineGeometry->FillContainsPoint(pos.to<D2D1_POINT_2F>(), &m_lastMatrix, &b);
   return b;
 }
 
@@ -280,7 +280,7 @@ void CSlider::MakeDial(Point2F center) {
   if(mpDial)
     ::OutputDebugStringA("Dial already present. You're too fast!");
   else
-    mpDial = new DialOnALeash(m_hWnd, m_d2dDriver, this);
+    mpDial = new DialOnALeash(mhWnd, mD2dDriver, this);
 
   const auto dialSize = Point2F{200.f};
   mpDial->ResetState(center - dialSize/2.f, mClientArea, dialSize);
@@ -294,10 +294,10 @@ void CSlider::HideDial()
 }
 
 ID2D1SolidColorBrush* CSlider::BrushForMode() {
-  switch(m_mode) {
-  case MODE_ABSOLUTE: return m_d2dDriver->m_spSomePinkishBlueBrush;
-  case MODE_RELATIVE: return m_d2dDriver->m_spCornflowerBrush;
-  case MODE_DIAL: return m_d2dDriver->m_spSomeGreenishBrush;
+  switch(mMode) {
+  case MODE_ABSOLUTE: return mD2dDriver->m_spSomePinkishBlueBrush;
+  case MODE_RELATIVE: return mD2dDriver->m_spCornflowerBrush;
+  case MODE_DIAL: return mD2dDriver->m_spSomeGreenishBrush;
   }
   return nullptr;
 }

@@ -50,8 +50,8 @@ bool ViewBase::InitializeBase() {
 
 ViewBase::ViewBase(HWND hWnd, CD2DDriver* pD2dDriver)
   : mhWnd(hWnd)
-  , m_spRT(pD2dDriver->GetRenderTarget())
-  , m_d2dDriver(pD2dDriver)
+  , mpRenderTarget(pD2dDriver->GetRenderTarget())
+  , mD2dDriver(pD2dDriver)
 { InitializeBase(); }
 
 ViewBase::~ViewBase() {
@@ -72,7 +72,7 @@ ViewBase::~ViewBase() {
 void CTransformableDrawingObject::ResetState(Point2F start, Point2F clientArea, Point2F initialSize)
 {
   mClientArea = clientArea;
-  mSize   = initialSize;
+  mSize = initialSize;
 
   // Set outer elastic border
   UpdateBorders();

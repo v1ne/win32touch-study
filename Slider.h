@@ -42,16 +42,15 @@ private:
   void MakeDial(Point2F center);
   void HideDial();
 
-  float m_value = 0.0f;
-  float m_rawTouchValue = 0.0f;
-
-  ID2D1RectangleGeometryPtr m_spRectGeometry;
+  ID2D1RectangleGeometryPtr mpOutlineGeometry;
+  float mBottomPos;
+  float mSliderHeight;
   
-  float m_bottomPos;
-  float m_sliderHeight;
+  float mValue = 0.0f;
+  float mRawTouchValue = 0.0f;
 
-  InteractionMode m_mode;
-  SliderType m_type;
+  InteractionMode mMode;
+  SliderType mType;
   DialOnALeash* mpDial = nullptr;
   friend class DialOnALeash;
 };
