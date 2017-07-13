@@ -53,7 +53,7 @@ HRESULT CD2DDriver::CreateDeviceIndependentResources() {
 HRESULT CD2DDriver::CreateDeviceResources() {
     HRESULT hr = S_OK;
 
-    if(!m_spRT) 
+    if(!m_spRT)
     {
         hr = CreateRenderTarget();
 
@@ -66,77 +66,77 @@ HRESULT CD2DDriver::CreateDeviceResources() {
         if(SUCCEEDED(hr))
         {
             // Create glossy gradient brush
-            hr = CreateGradient(pGlossyStops, 
-                &m_spGLBrush, 
-                D2D1::ColorF::White, 
-                0.5f, 
-                0.3f, 
-                D2D1::ColorF::White, 
-                0.0f, 
+            hr = CreateGradient(pGlossyStops,
+                &m_spGLBrush,
+                D2D1::ColorF::White,
+                0.5f,
+                0.3f,
+                D2D1::ColorF::White,
+                0.0f,
                 1.0f);
         }
 
         if(SUCCEEDED(hr))
         {
             // Create Blue gradient brush
-            hr = CreateGradient(pGradientStops, 
-                &m_spBLBrush, 
-                D2D1::ColorF::Aqua, 
-                1.0f, 
-                1.0f, 
-                D2D1::ColorF::DarkBlue, 
-                1.0f, 
+            hr = CreateGradient(pGradientStops,
+                &m_spBLBrush,
+                D2D1::ColorF::Aqua,
+                1.0f,
+                1.0f,
+                D2D1::ColorF::DarkBlue,
+                1.0f,
                 0.0f);
         }
 
         if(SUCCEEDED(hr))
         {
             // Create Orange gradient brush
-            CreateGradient(pGradientStops2, 
-                &m_spORBrush, 
-                D2D1::ColorF::Yellow, 
-                1.0f, 
-                1.0f, 
-                D2D1::ColorF::OrangeRed, 
-                1.0f, 
+            CreateGradient(pGradientStops2,
+                &m_spORBrush,
+                D2D1::ColorF::Yellow,
+                1.0f,
+                1.0f,
+                D2D1::ColorF::OrangeRed,
+                1.0f,
                 0.0f);
         }
 
         if(SUCCEEDED(hr))
         {
             // Create yellow gradient brush
-            hr = CreateGradient(pGradientStops3, 
-                &m_spREBrush, 
-                D2D1::ColorF::Red, 
-                1.0f, 
-                1.0f, 
-                D2D1::ColorF::Maroon, 
-                1.0f, 
+            hr = CreateGradient(pGradientStops3,
+                &m_spREBrush,
+                D2D1::ColorF::Red,
+                1.0f,
+                1.0f,
+                D2D1::ColorF::Maroon,
+                1.0f,
                 0.0f);
         }
         if(SUCCEEDED(hr))
         {
             // Create Green gradient brush
-            hr = CreateGradient(pGradientStops4, 
-                &m_spGRBrush, 
-                D2D1::ColorF::GreenYellow, 
-                1.0f, 
-                1.0f, 
-                D2D1::ColorF::Green, 
-                1.0f, 
+            hr = CreateGradient(pGradientStops4,
+                &m_spGRBrush,
+                D2D1::ColorF::GreenYellow,
+                1.0f,
+                1.0f,
+                D2D1::ColorF::Green,
+                1.0f,
                 0.0f);
         }
 
         if(SUCCEEDED(hr))
         {
             // Create bg gradient brush
-            hr = CreateGradient(pGradientStops5, 
-                &m_spBGBrush, 
-                D2D1::ColorF::LightSlateGray, 
-                1.0f, 
-                1.0f, 
-                D2D1::ColorF::Black, 
-                1.0f, 
+            hr = CreateGradient(pGradientStops5,
+                &m_spBGBrush,
+                D2D1::ColorF::LightSlateGray,
+                1.0f,
+                1.0f,
+                D2D1::ColorF::Black,
+                1.0f,
                 0.0f);
         }
 
@@ -154,32 +154,11 @@ HRESULT CD2DDriver::CreateDeviceResources() {
 }
 
 
-HRESULT CD2DDriver::RenderBackground(FLOAT clientWidth, FLOAT clientHeight) {
-    m_spBGBrush->SetStartPoint(
-        D2D1::Point2F(
-            clientWidth/2, 
-            0.0f)
-        );
-    
-    m_spBGBrush->SetEndPoint(
-        D2D1::Point2F(
-            clientWidth/2, 
-            clientHeight)
-         );
-    
-    // Create background rectangle
-    D2D1_RECT_F background = D2D1::RectF(
-        0,
-        0,
-        clientWidth,
-        clientHeight
-        );
-
-    m_spRT->FillRectangle(
-        &background,
-        m_spBGBrush
-        );
-
+HRESULT CD2DDriver::RenderBackground(Point2F size) {
+    m_spBGBrush->SetStartPoint(D2D1::Point2F(size.x/2, 0.0f));
+    m_spBGBrush->SetEndPoint(D2D1::Point2F(size.x/2, size.y));
+    D2D1_RECT_F background = D2D1::RectF(0, 0, size.x, size.y);
+    m_spRT->FillRectangle(&background, m_spBGBrush);
     m_spTransparentWhiteBrush->SetOpacity(0.015f);
 
 #if 0
@@ -198,24 +177,24 @@ HRESULT CD2DDriver::RenderBackground(FLOAT clientWidth, FLOAT clientHeight) {
         int randomAngle = rand()%360;
 
         // Apply rotate transform
-        rotateMatrix = D2D1::Matrix3x2F::Rotation((FLOAT)randomAngle, 
-        D2D1::Point2F((FLOAT)(randomPositionX + randomDimension/2), 
+        rotateMatrix = D2D1::Matrix3x2F::Rotation((FLOAT)randomAngle,
+        D2D1::Point2F((FLOAT)(randomPositionX + randomDimension/2),
                 (FLOAT)(randomPositionY + randomDimension/2)
             )
         );
-    
+
         m_spRT->SetTransform(&rotateMatrix);
-        
+
         square = D2D1::RectF(
             (FLOAT)randomPositionX,
             (FLOAT)randomPositionY,
             (FLOAT)randomDimension,
             (FLOAT)randomDimension
         );
-        
+
         roundedSquare = D2D1::RoundedRect(
-            square, 
-            10.0f, 
+            square,
+            10.0f,
             10.0f
         );
 
@@ -246,7 +225,7 @@ VOID CD2DDriver::DiscardDeviceResources() {
     m_spSomeGreenishBrush.Release();
     m_spBlackBrush.Release();
     m_spWhiteBrush.Release();
-}	
+}
 
 HRESULT CD2DDriver::CreateRenderTarget() {
     HRESULT hr = S_OK;
@@ -278,15 +257,15 @@ VOID CD2DDriver::EndDraw() {
     }
 }
 
-HRESULT CD2DDriver::CreateGradient(ID2D1GradientStopCollection* pStops, 
-    ID2D1LinearGradientBrush** pplgBrush, 
-    D2D1::ColorF::Enum startColor, 
-    FLOAT startOpacity, 
-    FLOAT startPos, 
-    D2D1::ColorF::Enum endColor, 
-    FLOAT endOpacity, 
+HRESULT CD2DDriver::CreateGradient(ID2D1GradientStopCollection* pStops,
+    ID2D1LinearGradientBrush** pplgBrush,
+    D2D1::ColorF::Enum startColor,
+    FLOAT startOpacity,
+    FLOAT startPos,
+    D2D1::ColorF::Enum endColor,
+    FLOAT endOpacity,
     FLOAT endPos) {
-    
+
     HRESULT hr = S_OK;
 
     D2D1_GRADIENT_STOP stops[2];

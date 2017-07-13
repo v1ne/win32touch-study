@@ -66,13 +66,13 @@ ATOM MyRegisterClass(HINSTANCE hInst)
 {
   WNDCLASSEX wc;
   ZeroMemory(&wc, sizeof(wc));
-  wc.cbSize    = sizeof(WNDCLASSEX);
-  wc.style     = CS_HREDRAW | CS_VREDRAW;
-  wc.lpfnWndProc   = WndProc;
-  wc.cbClsExtra  = 0;
-  wc.cbWndExtra  = 0;
-  wc.hInstance   = hInst;
-  wc.hCursor     = LoadCursor(NULL, IDC_ARROW);
+  wc.cbSize = sizeof(WNDCLASSEX);
+  wc.style = CS_HREDRAW | CS_VREDRAW;
+  wc.lpfnWndProc = WndProc;
+  wc.cbClsExtra = 0;
+  wc.cbWndExtra = 0;
+  wc.hInstance = hInst;
+  wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
   wc.lpszClassName = gWindowClass;
 
@@ -124,8 +124,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
   PTOUCHINPUT pInputs;
   TOUCHINPUT tInput;
   HTOUCHINPUT hInput;
-  int iNumContacts;
-  POINT ptInputs;
   PAINTSTRUCT ps;
 
   // Handle each type of inData and based on which event we handle continue processing
@@ -133,48 +131,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
   switch (msg)
   {
-  case WM_TOUCH:
-
-    iNumContacts = LOWORD(wParam);
+  case WM_TOUCH: {
+    auto NumContacts = LOWORD(wParam);
     hInput = (HTOUCHINPUT)lParam;
 
-    pInputs = new (std::nothrow) TOUCHINPUT[iNumContacts];
-
-    // Get each touch input info and feed each TOUCHINPUT into the process input handler
-
-    if(pInputs != NULL)
-    {
-      if(GetTouchInputInfo(hInput, iNumContacts, pInputs, sizeof(TOUCHINPUT)))
-      {
-         for(int i = 0; i < iNumContacts; i++)
-         {
-           // Bring touch input info into client coordinates
-
-           ptInputs.x = pInputs[i].x/100;
-           ptInputs.y = pInputs[i].y/100;
-           ScreenToClient(ghWnd, &ptInputs);
-           pInputs[i].x = ptInputs.x;
-           pInputs[i].y = ptInputs.y;
-           gpTouchDriver->ProcessInputEvent(&pInputs[i]);
-         }
-         gpTouchDriver->RunInertiaProcessorsAndRender();
+    pInputs = new TOUCHINPUT[NumContacts];
+    if(::GetTouchInputInfo(hInput, NumContacts, pInputs, sizeof(TOUCHINPUT))) {
+      for(int i = 0; i < NumContacts; i++) {
+        POINT physicalPoint = {pInputs[i].x/100, pInputs[i].y/100};
+        ::ScreenToClient(ghWnd, &physicalPoint);
+        pInputs[i].x = physicalPoint.x;
+        pInputs[i].y = physicalPoint.y;
+        gpTouchDriver->ProcessInputEvent(&pInputs[i]);
       }
+      gpTouchDriver->RunInertiaProcessorsAndRender();
     }
 
     delete [] pInputs;
     CloseTouchInputHandle(hInput);
-    break;
-
-  // For each Mouse event build a TOUCHINPUT struct and feed into the process input handler
+    break; }
 
   case WM_LBUTTONDOWN:
-
     FillInputData(&tInput, MOUSE_CURSOR_ID, TOUCHEVENTF_DOWN, (DWORD)GetMessageTime(),LOWORD(lParam),HIWORD(lParam));
     gpTouchDriver->ProcessInputEvent(&tInput);
     break;
 
   case WM_MOUSEMOVE:
-
     if(LOWORD(wParam) == MK_LBUTTON)
     {
       FillInputData(&tInput, MOUSE_CURSOR_ID, TOUCHEVENTF_MOVE, (DWORD)GetMessageTime(),LOWORD(lParam), HIWORD(lParam));
@@ -185,7 +167,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     break;
 
   case WM_LBUTTONUP:
-
     FillInputData(&tInput, MOUSE_CURSOR_ID, TOUCHEVENTF_UP, (DWORD)GetMessageTime(),LOWORD(lParam), HIWORD(lParam));
     gpTouchDriver->ProcessInputEvent(&tInput);
 
@@ -200,7 +181,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     ::GetClientRect(ghWnd, &rect);
 
     BeginPaint(ghWnd, &ps);
-    gpTouchDriver->RenderInitialState(rect.right - rect.left, rect.bottom - rect.top);
+    gpTouchDriver->RenderInitialState({rect.right - rect.left, rect.bottom - rect.top});
     EndPaint(ghWnd, &ps);
     break;
     }

@@ -27,12 +27,11 @@ public:
     void ProcessInputEvent(const TOUCHINPUT* inData);
 
     // Sets up the initial state of the objects
-    void RenderInitialState(const int iCWidth, const int iCHeight);
+    void RenderInitialState(Point2I physicalClientArea);
 
     void RunInertiaProcessorsAndRender();
         
-    // Localizes point for high-DPI
-    inline Point2F CComTouchDriver::PhysicalToLogicalPoint(Point2I p)
+    inline Point2F PhysicalToLogical(Point2I p)
     {
         return Point2F(p) / mPhysicalPointsPerLogicalPoint;
     }
@@ -54,9 +53,7 @@ private:
     std::list<ViewBase*> mCoreObjects;
     std::vector<ViewBase*> mCoreObjectsInInitialOrder;
 
-    // The client width and height
-    int m_iCWidth;
-    int m_iCHeight;
+    Point2F mPhysicalClientArea;
 
     float mPhysicalPointsPerLogicalPoint = 1.0f;
 

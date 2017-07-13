@@ -78,16 +78,14 @@ void CComTouchDriver::ProcessInputEvent(const TOUCHINPUT* inData) {
 }
 
 bool CComTouchDriver::DownEvent(ViewBase* pView, const TOUCHINPUT* inData) {
+  auto p = PhysicalToLogical({inData->x, inData->y});
+
+  if(!pView->InRegion(p))
+    return false;
+
   DWORD dwCursorID = inData->dwID;
-  auto p = PhysicalToLogicalPoint({inData->x, inData->y});
-
-  if(!pView->InRegion(p)) {
+  if(FAILED(pView->mManipulationProc->ProcessDownWithTime(dwCursorID, p.x, p.y, inData->dwTime)))
     return false;
-  }
-
-  if(FAILED(pView->mManipulationProc->ProcessDownWithTime(dwCursorID, p.x, p.y, inData->dwTime))) {
-    return false;
-  }
 
   mCursorIdToObjectMap.insert(std::pair<DWORD, ViewBase*>(dwCursorID, pView));
 
@@ -101,7 +99,7 @@ bool CComTouchDriver::DownEvent(ViewBase* pView, const TOUCHINPUT* inData) {
 
 void CComTouchDriver::MoveEvent(const TOUCHINPUT* inData) {
   DWORD dwCursorID = inData->dwID;
-  auto p = PhysicalToLogicalPoint({inData->x, inData->y});
+  auto p = PhysicalToLogical({inData->x, inData->y});
 
   auto iEntry = mCursorIdToObjectMap.find(dwCursorID);
   if(iEntry != mCursorIdToObjectMap.end())
@@ -110,7 +108,7 @@ void CComTouchDriver::MoveEvent(const TOUCHINPUT* inData) {
 
 void CComTouchDriver::UpEvent(const TOUCHINPUT* inData) {
   DWORD dwCursorID = inData->dwID;
-  auto p = PhysicalToLogicalPoint({inData->x, inData->y});
+  auto p = PhysicalToLogical({inData->x, inData->y});
 
   auto iEntry = mCursorIdToObjectMap.find(dwCursorID);
   if(iEntry != mCursorIdToObjectMap.end()) {
@@ -135,7 +133,7 @@ void CComTouchDriver::RenderObjects() {
     return;
 
   mD2dDriver->BeginDraw();
-  mD2dDriver->RenderBackground((FLOAT)m_iCWidth, (FLOAT)m_iCHeight);
+  mD2dDriver->RenderBackground(mPhysicalClientArea);
 
   for(auto iObject = mCoreObjects.rbegin(); iObject != mCoreObjects.rend(); ++iObject)
     (*iObject)->Paint();
@@ -143,8 +141,9 @@ void CComTouchDriver::RenderObjects() {
   mD2dDriver->EndDraw();
 }
 
-void CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight) {
-  D2D1_SIZE_U size = {UINT32(iCWidth), UINT32(iCHeight)};
+void CComTouchDriver::RenderInitialState(Point2I physicalClientArea) {
+  D2D1_SIZE_U size = {UINT32(physicalClientArea.x), UINT32(physicalClientArea.y)};
+
   if (FAILED(mD2dDriver->GetRenderTarget()->Resize(size)))
   {
     mD2dDriver->DiscardDeviceResources();
@@ -152,11 +151,9 @@ void CComTouchDriver::RenderInitialState(const int iCWidth, const int iCHeight) 
     return;
   }
 
-  m_iCWidth = iCWidth;
-  m_iCHeight = iCHeight;
+  mPhysicalClientArea = Point2F(physicalClientArea);
 
-  auto unscaledClientArea = Point2F(Point2I(iCWidth, iCHeight));
-  auto clientArea = PhysicalToLogicalPoint({iCWidth, iCHeight});
+  auto clientArea = PhysicalToLogical(physicalClientArea);
 
   const auto squareSize = Point2F(200.f);
   const auto numSquareColumns = int(sqrt(NUM_CORE_OBJECTS));

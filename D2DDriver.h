@@ -39,7 +39,7 @@ public:
     HRESULT CreateDeviceResources();
     VOID DiscardDeviceResources();
     
-    HRESULT RenderBackground(FLOAT clientWidth, FLOAT clientHeight);
+    HRESULT RenderBackground(Point2F size);
     ID2D1HwndRenderTargetPtr GetRenderTarget();
     ID2D1LinearGradientBrushPtr get_GradBrush(unsigned int uBrushType);
 

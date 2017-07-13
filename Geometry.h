@@ -24,8 +24,8 @@ struct Point2 {
 
   const T* raw() const { return (const T*)this; }
   T* raw() { return (T*)this; }
-  template<typename U>
-  U to() const { return {x, y}; }
+  template<typename U> U* rawAs() const { static_assert(sizeof(U) == sizeof(T), "size mismatch"); return (U*)this; }
+  template<typename U> U to() const { return {x, y}; }
 
 
   friend Self operator+(const Self& a, const Self& b) {
@@ -64,6 +64,7 @@ struct Point2 {
 };
 
 using Point2F = Point2<float>;
+using Point2L = Point2<long>;
 using Point2I = Point2<int>;
 
 Point2F rotateRad(const Point2F p, const float radAngle);
