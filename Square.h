@@ -8,7 +8,7 @@
 #pragma once
 
 #include "D2DDriver.h"
-#include "DrawingObject.h"
+#include "ViewBase.h"
 #include <windows.h>
 
 class CSquare : public CTransformableDrawingObject {
@@ -19,8 +19,8 @@ public:
     ~CSquare() override;
 
     void ManipulationStarted(Point2F start) override;
-    void ManipulationDelta(CDrawingObject::ManipDeltaParams) override;
-    void ManipulationCompleted(CDrawingObject::ManipCompletedParams) override;
+    void ManipulationDelta(ViewBase::ManipDeltaParams) override;
+    void ManipulationCompleted(ViewBase::ManipCompletedParams) override;
 
     void Paint() override;
     bool InRegion(Point2F pos) override;

@@ -6,10 +6,67 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Copyright (c) v1ne
 
-#include "DrawingObject.h"
+#include "ManipulationEventsink.h"
+#include "ViewBase.h"
+
+#include <manipulations.h>
+#include <manipulations_i.c>
 #include <math.h>
 
 #define DEFAULT_DIRECTION	0
+
+bool gShiftPressed = false;
+
+
+bool ViewBase::InitializeBase() {
+  if(FAILED(CoCreateInstance(CLSID_ManipulationProcessor, NULL,
+      CLSCTX_INPROC_SERVER, IID_IUnknown, (VOID**)(&mManipulationProc))))
+    return false;
+
+  if(FAILED(CoCreateInstance(CLSID_InertiaProcessor, NULL,
+      CLSCTX_INPROC_SERVER, IID_IUnknown, (VOID**)(&mInertiaProc))))
+    return false;
+
+  if(!mCanRotate) {
+    auto manipulations = MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ALL;
+    // TODO: Besser lösen!
+    //manipulations &= ~MANIPULATION_ROTATE;
+    manipulations = MANIPULATION_ROTATE;
+    mManipulationProc->put_SupportedManipulations(manipulations);
+  }
+
+  mManipulationEventSink = new CManipulationEventSink(mhWnd, this, FALSE);
+  if(!mManipulationEventSink->SetupConnPt(mManipulationProc))
+    return false;
+
+  mInertiaEventSink = new CManipulationEventSink(mhWnd, this, TRUE);
+  if(!mInertiaEventSink->SetupConnPt(mInertiaProc))
+    return false;
+
+  mIsInertiaActive = FALSE;
+
+  return true;
+}
+
+ViewBase::ViewBase(HWND hWnd, CD2DDriver* pD2dDriver)
+  : mhWnd(hWnd)
+  , m_spRT(pD2dDriver->GetRenderTarget())
+  , m_d2dDriver(pD2dDriver)
+{ InitializeBase(); }
+
+ViewBase::~ViewBase() {
+  mManipulationEventSink->RemoveConnPt();
+  mManipulationEventSink->Release();
+  mManipulationEventSink = NULL;
+
+  mInertiaEventSink->RemoveConnPt();
+  mInertiaEventSink->Release();
+  mInertiaEventSink = NULL;
+
+  mManipulationProc->Release();
+
+  mInertiaProc->Release();
+}
 
 
 void CTransformableDrawingObject::ResetState(Point2F start, Point2F clientArea, Point2F initialSize)

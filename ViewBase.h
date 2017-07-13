@@ -10,44 +10,16 @@
 
 #include "D2DDriver.h"
 #include "Geometry.h"
-#include <windows.h>
+#include "ManipulationCallbacks.h"
 
+#include <windows.h>
 
 extern bool gShiftPressed;
 
-
-class CDrawingObject {
+class ViewBase: public IManipulationCallbacks {
 public:
-  struct ManipDeltaParams {
-    Point2F pos;
-    Point2F dTranslation;
-    float dScale;
-    float dExtension;
-    float dRotation;
-    Point2F sumTranslation;
-    float sumScale;
-    float sumExpansion;
-    float sumRotation;
-    bool isExtrapolated;
-  };
-
-  struct ManipCompletedParams {
-    Point2F pos;
-    Point2F sumTranslation;
-    float sumScale;
-    float sumExpansion;
-    float sumRotation;
-  };
-
-  CDrawingObject(HWND hwnd, CD2DDriver* d2dDriver)
-    : m_hWnd(hwnd)
-    , m_spRT(d2dDriver->GetRenderTarget())
-    , m_d2dDriver(d2dDriver) {}
-  virtual ~CDrawingObject() {};
-
-  virtual void ManipulationStarted(Point2F pos) = 0;
-  virtual void ManipulationDelta(ManipDeltaParams params) = 0;
-  virtual void ManipulationCompleted(ManipCompletedParams params) = 0;
+  ViewBase(HWND hwnd, CD2DDriver* d2dDriver);
+  virtual ~ViewBase();
     
   virtual void Paint() = 0;
   virtual bool InRegion(Point2F pos) = 0;
@@ -60,20 +32,25 @@ public:
   virtual float PivotRadius() = 0;
 
 protected:
-  HWND m_hWnd;
+  bool mCanRotate;
+  HWND mhWnd;
+  HWND m_hWnd = mhWnd;
   CD2DDriver* m_d2dDriver;
   ID2D1HwndRenderTargetPtr m_spRT;
 
   // Real top-left coordinate of object
   Point2F mPos;
   Point2F mSize;
+
+private:
+  bool InitializeBase();
 };
 
 
-class CTransformableDrawingObject: public CDrawingObject
+class CTransformableDrawingObject: public ViewBase
 {
 public:
-  CTransformableDrawingObject(HWND hWnd, CD2DDriver* d2dDriver) : CDrawingObject(hWnd, d2dDriver) {}
+  CTransformableDrawingObject(HWND hWnd, CD2DDriver* d2dDriver) : ViewBase(hWnd, d2dDriver) {}
   void ResetState(Point2F start, Point2F clientArea, Point2F initialSize);
 
   Point2F PivotPoint() override;

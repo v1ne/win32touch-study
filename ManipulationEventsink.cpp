@@ -6,7 +6,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved
 
 #include "ManipulationEventsink.h"
-#include "CoreObject.h"
+
 #include <math.h>
 
 HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationStarted(
@@ -18,10 +18,10 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationStarted(
 
     // Stop object if it is in the state of inertia
 
-    m_coRef->mIsInertiaActive = FALSE;
+    mpViewObject->mIsInertiaActive = FALSE;
     KillTimer(m_hWnd, m_iTimerId);
 
-    m_coRef->mpDrawingObject->ManipulationStarted({x, y});
+    mpViewObject->ManipulationStarted({x, y});
 
     return S_OK;
 }
@@ -47,22 +47,21 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationDelta(
     UNREFERENCED_PARAMETER(cumulativeTranslationY);
     UNREFERENCED_PARAMETER(expansionDelta);
 
-    CDrawingObject* dObj = m_coRef->mpDrawingObject;
-    IManipulationProcessor* mp= m_coRef->mManipulationProc;
 
     HRESULT hr = S_OK;
 
-    m_coRef->mpDrawingObject->ManipulationDelta({{x, y},
+    mpViewObject->ManipulationDelta({{x, y},
       {translationDeltaX, translationDeltaY},
       scaleDelta, expansionDelta, rotationDelta,
       {cumulativeTranslationX, cumulativeTranslationY},
       cumulativeScale, cumulativeExpansion, cumulativeRotation, m_bInertia});
 
      if(!m_bInertia) {
-        const auto pivotPoint = dObj->PivotPoint();
-        HRESULT hrPPX = mp->put_PivotPointX(pivotPoint.x);
-        HRESULT hrPPY = mp->put_PivotPointY(pivotPoint.y);
-        HRESULT hrPR  = mp->put_PivotRadius(dObj->PivotRadius());
+        const auto pivotPoint = mpViewObject->PivotPoint();
+        const auto manipulationProc = mpViewObject->mManipulationProc;
+        HRESULT hrPPX = manipulationProc->put_PivotPointX(pivotPoint.x);
+        HRESULT hrPPY = manipulationProc->put_PivotPointY(pivotPoint.y);
+        HRESULT hrPR  = manipulationProc->put_PivotRadius(mpViewObject->PivotRadius());
 
         if(FAILED(hrPPX) || FAILED(hrPPY) || FAILED(hrPR))
         {
@@ -89,8 +88,8 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
     UNREFERENCED_PARAMETER(x);
     UNREFERENCED_PARAMETER(y);
 
-    IInertiaProcessor* ip = m_coRef->mInertiaProc;
-    IManipulationProcessor* mp = m_coRef->mManipulationProc;
+    IInertiaProcessor* ip = mpViewObject->mInertiaProc;
+    IManipulationProcessor* mp = mpViewObject->mManipulationProc;
 
     HRESULT hr = S_OK;
     if(!m_bInertia)
@@ -105,16 +104,16 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
 
         // Set the core objects inertia state to TRUE so it can
         // be processed when another object is being manipulated
-        m_coRef->mIsInertiaActive = TRUE;
+        mpViewObject->mIsInertiaActive = TRUE;
 
         // Kick off timer that handles inertia
         SetTimer(m_hWnd, m_iTimerId, DESIRED_MILLISECONDS, NULL);
     }
     else
     {
-        m_coRef->mIsInertiaActive = FALSE;
+        mpViewObject->mIsInertiaActive = FALSE;
 
-        m_coRef->mpDrawingObject->ManipulationCompleted({{x, y},
+        mpViewObject->ManipulationCompleted({{x, y},
           {cumulativeTranslationX, cumulativeTranslationY},
           cumulativeScale, cumulativeExpansion, cumulativeRotation});
 

@@ -48,7 +48,7 @@ void CSquare::ManipulationStarted(Point2F)
 }
 
 
-void CSquare::ManipulationDelta(CDrawingObject::ManipDeltaParams params)
+void CSquare::ManipulationDelta(ViewBase::ManipDeltaParams params)
 {
     float rads = 180.0f / 3.14159f;
 
@@ -59,97 +59,94 @@ void CSquare::ManipulationDelta(CDrawingObject::ManipDeltaParams params)
     Translate(params.dTranslation, params.isExtrapolated);
 }
 
-void CSquare::ManipulationCompleted(CDrawingObject::ManipCompletedParams)
+void CSquare::ManipulationCompleted(ViewBase::ManipCompletedParams)
 {
 }
 
 void CSquare::Paint()
 {
-    if(!(m_spRT->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
-    {
-        float fGlOffset = 2.5f;
+    float fGlOffset = 2.5f;
 
-        // Setup our matrices for performing transforms
+    // Setup our matrices for performing transforms
 
-        D2D_MATRIX_3X2_F rotateMatrix;
-        D2D_MATRIX_3X2_F identityMatrix;
-        identityMatrix = D2D1::Matrix3x2F::Identity();
+    D2D_MATRIX_3X2_F rotateMatrix;
+    D2D_MATRIX_3X2_F identityMatrix;
+    identityMatrix = D2D1::Matrix3x2F::Identity();
 
-        // Apply rotate transform
+    // Apply rotate transform
 
-        rotateMatrix = D2D1::Matrix3x2F::Rotation(
-            m_fAngleCumulative,
-            (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
+    rotateMatrix = D2D1::Matrix3x2F::Rotation(
+        m_fAngleCumulative,
+        (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
 
-        m_spRT->SetTransform(&rotateMatrix);
+    m_spRT->SetTransform(&rotateMatrix);
 
-        // Store the rotate matrix to be used in hit testing
-        m_lastMatrix = rotateMatrix;
+    // Store the rotate matrix to be used in hit testing
+    m_lastMatrix = rotateMatrix;
 
-        // Get glossy brush
-        m_pGlBrush = m_d2dDriver->get_GradBrush(CD2DDriver::GRB_Glossy);
+    // Get glossy brush
+    m_pGlBrush = m_d2dDriver->get_GradBrush(CD2DDriver::GRB_Glossy);
 
-        // Set positions of gradients based on the new coordinates of the objecs
-        m_currBrush->SetStartPoint(mRenderPos.to<D2D1_POINT_2F>());
-        m_currBrush->SetEndPoint(D2D1::Point2F(
-            mRenderPos.x,
-            mRenderPos.y + mSize.y));
+    // Set positions of gradients based on the new coordinates of the objecs
+    m_currBrush->SetStartPoint(mRenderPos.to<D2D1_POINT_2F>());
+    m_currBrush->SetEndPoint(D2D1::Point2F(
+        mRenderPos.x,
+        mRenderPos.y + mSize.y));
 
-        m_pGlBrush->SetStartPoint(mRenderPos.to<D2D1_POINT_2F>());  
-        m_pGlBrush->SetEndPoint(D2D1::Point2F(
-            mRenderPos.x + mSize.x/15.0f,
-            mRenderPos.y + mSize.y/2.0f));
+    m_pGlBrush->SetStartPoint(mRenderPos.to<D2D1_POINT_2F>());  
+    m_pGlBrush->SetEndPoint(D2D1::Point2F(
+        mRenderPos.x + mSize.x/15.0f,
+        mRenderPos.y + mSize.y/2.0f));
 
-        // Create rectangle to draw
+    // Create rectangle to draw
 
-        D2D1_RECT_F rectangle = D2D1::RectF(
-            mRenderPos.x,
-            mRenderPos.y,
-            mRenderPos.x+mSize.x,
-            mRenderPos.y+mSize.y
-        );
+    D2D1_RECT_F rectangle = D2D1::RectF(
+        mRenderPos.x,
+        mRenderPos.y,
+        mRenderPos.x+mSize.x,
+        mRenderPos.y+mSize.y
+    );
 
-        D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
-            rectangle,
-            10.0f, 10.0f
-        );
+    D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
+        rectangle,
+        10.0f, 10.0f
+    );
 
-        // Create glossy effect
+    // Create glossy effect
 
-        D2D1_RECT_F glossyRect = D2D1::RectF(
-            mRenderPos.x+fGlOffset,
-            mRenderPos.y+fGlOffset,
-            mRenderPos.x+mSize.x-fGlOffset,
-            mRenderPos.y+mSize.y/2.0f
-        );
+    D2D1_RECT_F glossyRect = D2D1::RectF(
+        mRenderPos.x+fGlOffset,
+        mRenderPos.y+fGlOffset,
+        mRenderPos.x+mSize.x-fGlOffset,
+        mRenderPos.y+mSize.y/2.0f
+    );
 
-        D2D1_ROUNDED_RECT glossyRoundedRect = D2D1::RoundedRect(
-            glossyRect,
-            10.0f,
-            10.0f
-        );
+    D2D1_ROUNDED_RECT glossyRoundedRect = D2D1::RoundedRect(
+        glossyRect,
+        10.0f,
+        10.0f
+    );
 
-        // D2D requires that a geometry is created for the rectangle
-        m_d2dDriver->m_spD2DFactory->CreateRoundedRectangleGeometry(
-            roundedRect,
-            &m_spRoundedRectGeometry
-        );
+    // D2D requires that a geometry is created for the rectangle
+    m_d2dDriver->m_spD2DFactory->CreateRoundedRectangleGeometry(
+        roundedRect,
+        &m_spRoundedRectGeometry
+    );
 
-        // Fill the geometry that was created
-        m_spRT->FillGeometry(
-            m_spRoundedRectGeometry,
-            m_currBrush
-        );
+    // Fill the geometry that was created
+    m_spRT->FillGeometry(
+        m_spRoundedRectGeometry,
+        m_currBrush
+    );
 
-        // Draw glossy effect
-        m_spRT->FillRoundedRectangle(
-            &glossyRoundedRect,
-            m_pGlBrush
-        );
+    // Draw glossy effect
+    m_spRT->FillRoundedRectangle(
+        &glossyRoundedRect,
+        m_pGlBrush
+    );
 
-        // Restore our transform to nothing
-        m_spRT->SetTransform(&identityMatrix);
-    }
+    // Restore our transform to nothing
+    m_spRT->SetTransform(&identityMatrix);
 }
 
 // Hit testing method handled with Direct2D

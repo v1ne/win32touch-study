@@ -5,10 +5,10 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved
 
-#ifndef COMTOUCHDRIVER_H
-#define COMTOUCHDRIVER_H
+#pragma once
 
-#include "CoreObject.h"
+#include "ViewBase.h"
+
 #include <map>
 #include <list>
 #include <vector>
@@ -43,16 +43,16 @@ private:
 
     // Event helpers for processing input events
 
-    bool DownEvent(CCoreObject* coRef, const TOUCHINPUT* inData);
+    bool DownEvent(ViewBase* pViewBase, const TOUCHINPUT* inData);
     void MoveEvent(const TOUCHINPUT* inData);
     void UpEvent(const TOUCHINPUT* inData);
 
     // Map of cursor ids and core obejcts
-    std::map<DWORD, CCoreObject*> m_mCursorObject;
+    std::map<DWORD, ViewBase*> m_mCursorObject;
   
     // List of core objects to be manipulated
-    std::list<CCoreObject*> m_lCoreObjects;
-    std::vector<CCoreObject*> m_lCoreObjectsInInitialOrder;
+    std::list<ViewBase*> m_lCoreObjects;
+    std::vector<ViewBase*> m_lCoreObjectsInInitialOrder;
 
     // The client width and height
     int m_iCWidth;
@@ -66,5 +66,3 @@ private:
     // Handle to window
     HWND mhWnd;
 };
-
-#endif

@@ -22,7 +22,7 @@ public:
   void ManipulationStarted(Point2F) override {
   }
 
-  void ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
+  void ManipulationDelta(ViewBase::ManipDeltaParams params) {
     float rads = 180.0f / 3.14159f;
 
     //SetManipulationOrigin(params.pos);
@@ -34,7 +34,7 @@ public:
     mpSlider->m_value = ::fmaxf(0, ::fminf(1, rawValue));
   }
 
-  void ManipulationCompleted(CDrawingObject::ManipCompletedParams params) {
+  void ManipulationCompleted(ViewBase::ManipCompletedParams params) {
     mIsShown = false;
   }
 
@@ -106,11 +106,10 @@ CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionM
   : CTransformableDrawingObject(hWnd, d2dDriver)
   , m_mode(mode)
   , m_type(type)
-  , m_value(::rand() / float(RAND_MAX)) {
-}
+  , m_value(::rand() / float(RAND_MAX))
+{ }
 
-CSlider::~CSlider()
-{
+CSlider::~CSlider() {
   HideDial();
 }
 
@@ -131,7 +130,7 @@ void CSlider::ManipulationStarted(Point2F pos) {
 }
 
 
-void CSlider::ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
+void CSlider::ManipulationDelta(ViewBase::ManipDeltaParams params) {
   if(gShiftPressed) {
     float rads = 180.0f / 3.14159f;
 
@@ -148,7 +147,7 @@ void CSlider::ManipulationDelta(CDrawingObject::ManipDeltaParams params) {
 }
 
 
-void CSlider::ManipulationCompleted(CDrawingObject::ManipCompletedParams params) {
+void CSlider::ManipulationCompleted(ViewBase::ManipCompletedParams params) {
   if(m_mode == MODE_DIAL) {
     if(mpDial) mpDial->ManipulationCompleted(params);
     HideDial();
@@ -159,8 +158,7 @@ void CSlider::ManipulationCompleted(CDrawingObject::ManipCompletedParams params)
 }
 
 
-void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY)
-{
+void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY) {
   switch(m_mode) {
   case MODE_ABSOLUTE:
     HandleTouchInAbsoluteInteractionMode(y);
@@ -172,14 +170,12 @@ void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY)
 }
 
 
-void CSlider::HandleTouchInAbsoluteInteractionMode(float y)
-{
+void CSlider::HandleTouchInAbsoluteInteractionMode(float y) {
   m_value = ::fmaxf(0, ::fminf(1, (m_bottomPos - y) / m_sliderHeight));
 }
 
 
-void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY)
-{
+void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY) {
   const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * mSize.x);
 
   m_rawTouchValue -= deltaY / m_sliderHeight / dragScalingFactor;
@@ -187,38 +183,34 @@ void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX,
 }
 
 
-void CSlider::Paint()
-{
-  if(!(m_spRT->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
-  {
-    const auto rotateMatrix = D2D1::Matrix3x2F::Rotation(
-      m_fAngleCumulative,
-      (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
+void CSlider::Paint() {
+  const auto rotateMatrix = D2D1::Matrix3x2F::Rotation(
+    m_fAngleCumulative,
+    (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
 
-    m_spRT->SetTransform(&rotateMatrix);
+  m_spRT->SetTransform(&rotateMatrix);
 
-    // Store the rotate matrix to be used in hit testing
-    m_lastMatrix = rotateMatrix;
+  // Store the rotate matrix to be used in hit testing
+  m_lastMatrix = rotateMatrix;
 
-    const auto bgRect = D2D1::RectF(mRenderPos.x, mRenderPos.y, mRenderPos.x+mSize.x, mRenderPos.y+mSize.y);
-    m_d2dDriver->m_spD2DFactory->CreateRectangleGeometry(bgRect, &m_spRectGeometry);
-    m_spRT->FillGeometry(m_spRectGeometry, m_d2dDriver->m_spLightGreyBrush);
+  const auto bgRect = D2D1::RectF(mRenderPos.x, mRenderPos.y, mRenderPos.x+mSize.x, mRenderPos.y+mSize.y);
+  m_d2dDriver->m_spD2DFactory->CreateRectangleGeometry(bgRect, &m_spRectGeometry);
+  m_spRT->FillGeometry(m_spRectGeometry, m_d2dDriver->m_spLightGreyBrush);
 
-    switch(m_type) {
-    case TYPE_SLIDER:
-      PaintSlider();
-      break;
-    case TYPE_KNOB:
-      PaintKnob();
-      break;
-    }
-
-    // Restore our transform to nothing
-    const auto identityMatrix = D2D1::Matrix3x2F::Identity();
-    m_spRT->SetTransform(&identityMatrix);
-
-    if(mpDial) mpDial->Paint();
+  switch(m_type) {
+  case TYPE_SLIDER:
+    PaintSlider();
+    break;
+  case TYPE_KNOB:
+    PaintKnob();
+    break;
   }
+
+  // Restore our transform to nothing
+  const auto identityMatrix = D2D1::Matrix3x2F::Identity();
+  m_spRT->SetTransform(&identityMatrix);
+
+  if(mpDial) mpDial->Paint();
 }
 
 
@@ -245,8 +237,7 @@ void CSlider::PaintSlider()
 }
 
 
-void CSlider::PaintKnob()
-{
+void CSlider::PaintKnob() {
   const auto border = POINTF{mSize.x / 8, mSize.y / 8};
   const auto center = Center().to<D2D1_POINT_2F>();
   const auto knobRadius = ::fminf((mSize.x - border.x)/2, (mSize.y - border.y)/2);
@@ -273,8 +264,7 @@ void CSlider::PaintKnob()
 }
 
 
-bool CSlider::InMyRegion(Point2F pos)
-{
+bool CSlider::InMyRegion(Point2F pos) {
   BOOL b = FALSE;
   m_spRectGeometry->FillContainsPoint(pos.to<D2D1_POINT_2F>(), &m_lastMatrix, &b);
   return b;
@@ -284,13 +274,15 @@ bool CSlider::InMyRegion(Point2F pos)
 bool CSlider::InRegion(Point2F pos) {
   return InMyRegion(pos) || (mpDial && mpDial->InRegion(pos));
 }
-void CSlider::MakeDial(Point2F center)
 
 
-{
-  assert(!mpDial);
+void CSlider::MakeDial(Point2F center) {
+  if(mpDial)
+    ::OutputDebugStringA("Dial already present. You're too fast!");
+  else
+    mpDial = new DialOnALeash(m_hWnd, m_d2dDriver, this);
+
   const auto dialSize = Point2F{200.f};
-  mpDial = new DialOnALeash(m_hWnd, m_d2dDriver, this);
   mpDial->ResetState(center - dialSize/2.f, mClientArea, dialSize);
 }
 
@@ -301,8 +293,7 @@ void CSlider::HideDial()
   mpDial = nullptr;
 }
 
-ID2D1SolidColorBrush* CSlider::BrushForMode()
-{
+ID2D1SolidColorBrush* CSlider::BrushForMode() {
   switch(m_mode) {
   case MODE_ABSOLUTE: return m_d2dDriver->m_spSomePinkishBlueBrush;
   case MODE_RELATIVE: return m_d2dDriver->m_spCornflowerBrush;

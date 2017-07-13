@@ -195,9 +195,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ComTouchDriver.cpp" />
-    <ClCompile Include="CoreObject.cpp" />
     <ClCompile Include="D2DDriver.cpp" />
-    <ClCompile Include="DrawingObject.cpp" />
+    <ClCompile Include="ViewBase.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="ManipulationEventsink.cpp" />
     <ClCompile Include="ManipulationSample.cpp">
@@ -211,9 +210,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ComTouchDriver.h" />
-    <ClInclude Include="CoreObject.h" />
     <ClInclude Include="D2DDriver.h" />
-    <ClInclude Include="DrawingObject.h" />
+    <ClInclude Include="ManipulationCallbacks.h" />
+    <ClInclude Include="ViewBase.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="ManipulationEventsink.h" />
     <ClInclude Include="Resource.h" />
