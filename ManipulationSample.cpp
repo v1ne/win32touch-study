@@ -44,44 +44,28 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 VOID                SetTabletInputServiceProperties();
 VOID                FillInputData(TOUCHINPUT* inData, DWORD cursor, DWORD eType, DWORD time, int x, int y);
 
-// Program entry point
-int APIENTRY wWinMain(__in HINSTANCE hinst, __in_opt HINSTANCE hinstPrev, __in LPWSTR lpCmdLine,__in int nCmdShow)
-{
-    (void)HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
-    UNREFERENCED_PARAMETER(hinstPrev);
-    UNREFERENCED_PARAMETER(lpCmdLine);
-    UNREFERENCED_PARAMETER(nCmdShow);
-    BOOL success = TRUE;
-    MSG msg;
-    
-    // Initialize global strings
-    LoadString(hinst, IDS_WINDOW, g_tszWindowClass, MAX_LOADSTRING);
-    LoadString(hinst, IDS_CAPTION, g_tszMainTitle, MAX_LOADSTRING);
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR pCmdLine, int nCmdShow) {
+  if(FAILED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED)))
+    return 0;
 
-    // D2D automatically handles high DPI settings
-    SetProcessDPIAware();
+  LoadString(hInstance, IDS_WINDOW, g_tszWindowClass, MAX_LOADSTRING);
+  LoadString(hInstance, IDS_CAPTION, g_tszMainTitle, MAX_LOADSTRING);
 
-    // Register Class
-    MyRegisterClass(hinst);
+  MyRegisterClass(hInstance);
 
-    // Initialize Application
-    if (!InitInstance(hinst, SW_SHOWMAXIMIZED)) 
-    {
-        wprintf(L"Failed to initialize application");
-        success = FALSE;
-    }
-    
-    if(success)
-    {
-        // Main message loop
-        while (GetMessage(&msg, NULL, 0, 0))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
-    return success;
-} 
+  if (!InitInstance(hInstance, SW_SHOWMAXIMIZED)) {
+    wprintf(L"Failed to initialize application");
+    return 0;
+  }
+
+  MSG msg;
+  while (GetMessage(&msg, NULL, 0, 0)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  }
+
+  return 1;
+}
 
 // Register Window Class
 ATOM MyRegisterClass(HINSTANCE hInst)
@@ -107,11 +91,11 @@ BOOL InitInstance(HINSTANCE hinst, int nCmdShow)
     BOOL success = TRUE;
 
     // Store instance handler in global variable
-    g_hInst = hinst; 
+    g_hInst = hinst;
 
-    g_hWnd = CreateWindowEx(0, g_tszWindowClass, g_tszMainTitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
+    g_hWnd = CreateWindowEx(0, g_tszWindowClass, g_tszMainTitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
         CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, g_hInst, 0);
-    
+
 
     if(!g_hWnd)
     {
@@ -137,12 +121,12 @@ BOOL InitInstance(HINSTANCE hinst, int nCmdShow)
 
     if(success)
     {
-        // Disable UI feedback for penflicks 
+        // Disable UI feedback for penflicks
         SetTabletInputServiceProperties();
-        
+
         // Ready for handling WM_TOUCH messages
         RegisterTouchWindow(g_hWnd, 0);
-        
+
         ShowWindow(g_hWnd, nCmdShow);
         UpdateWindow(g_hWnd);
     }
@@ -169,7 +153,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     // Handle each type of inData and based on which event we handle continue processing
     // the inData for manipulations by calling the ComTouchDriver
-    
+
     switch (msg)
     {
     case WM_TOUCH:
@@ -178,7 +162,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         hInput = (HTOUCHINPUT)lParam;
 
         pInputs = new (std::nothrow) TOUCHINPUT[iNumContacts];
-       
+
         // Get each touch input info and feed each TOUCHINPUT into the process input handler
 
         if(pInputs != NULL)
@@ -196,20 +180,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                    pInputs[i].y = ptInputs.y;
                    g_ctDriver->ProcessInputEvent(&pInputs[i]);
                }
-               g_ctDriver->ProcessChanges();
+               g_ctDriver->RunInertiaProcessorsAndRender();
             }
         }
-        
+
         delete [] pInputs;
         CloseTouchInputHandle(hInput);
         break;
-    
+
     // For each Mouse event build a TOUCHINPUT struct and feed into the process input handler
 
     case WM_LBUTTONDOWN:
 
         FillInputData(&tInput, MOUSE_CURSOR_ID, TOUCHEVENTF_DOWN, (DWORD)GetMessageTime(),LOWORD(lParam),HIWORD(lParam));
-        g_ctDriver->ProcessInputEvent(&tInput);        
+        g_ctDriver->ProcessInputEvent(&tInput);
         break;
 
     case WM_MOUSEMOVE:
@@ -217,21 +201,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if(LOWORD(wParam) == MK_LBUTTON)
         {
             FillInputData(&tInput, MOUSE_CURSOR_ID, TOUCHEVENTF_MOVE, (DWORD)GetMessageTime(),LOWORD(lParam), HIWORD(lParam));
-            g_ctDriver->ProcessInputEvent(&tInput);      
-            g_ctDriver->ProcessChanges();
+            g_ctDriver->ProcessInputEvent(&tInput);
+            g_ctDriver->RunInertiaProcessorsAndRender();
         }
-      
+
         break;
 
     case WM_LBUTTONUP:
 
         FillInputData(&tInput, MOUSE_CURSOR_ID, TOUCHEVENTF_UP, (DWORD)GetMessageTime(),LOWORD(lParam), HIWORD(lParam));
         g_ctDriver->ProcessInputEvent(&tInput);
-        
+
         break;
 
     case WM_DESTROY:
-        
+
         if(g_ctDriver)
         {
             delete g_ctDriver;
@@ -246,16 +230,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_PAINT:
-        
+
         BeginPaint(g_hWnd, &ps);
         g_ctDriver->RenderInitialState(g_iCWidth, g_iCHeight);
         EndPaint(g_hWnd, &ps);
         break;
 
     case WM_TIMER:
-        g_ctDriver->ProcessChanges();
+        g_ctDriver->RunInertiaProcessorsAndRender();
         break;
-      
+
     case WM_KEYDOWN:
     case WM_KEYUP:
         if (wParam == 0x10)
@@ -285,13 +269,13 @@ VOID FillInputData(TOUCHINPUT* inData, DWORD cursor, DWORD eType, DWORD time, in
 
 VOID SetTabletInputServiceProperties()
 {
-    DWORD_PTR dwHwndTabletProperty = 
+    DWORD_PTR dwHwndTabletProperty =
     TABLET_DISABLE_PRESSANDHOLD | // disables press and hold (right-click) gesture
     TABLET_DISABLE_PENTAPFEEDBACK | // disables UI feedback on pen up (waves)
     TABLET_DISABLE_PENBARRELFEEDBACK | // disables UI feedback on pen button down (circle)
     TABLET_DISABLE_FLICKS; // disables pen flicks (back, forward, drag down, drag up)
-    
-    ATOM atom = ::GlobalAddAtom(MICROSOFT_TABLETPENSERVICE_PROPERTY);  
+
+    ATOM atom = ::GlobalAddAtom(MICROSOFT_TABLETPENSERVICE_PROPERTY);
     SetProp(g_hWnd, MICROSOFT_TABLETPENSERVICE_PROPERTY, reinterpret_cast<HANDLE>(dwHwndTabletProperty));
     GlobalDeleteAtom(atom);
 

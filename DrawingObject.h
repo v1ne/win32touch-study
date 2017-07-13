@@ -30,6 +30,7 @@ public:
     float sumRotation;
     bool isExtrapolated;
   };
+
   struct ManipCompletedParams {
     Point2F pos;
     Point2F sumTranslation;

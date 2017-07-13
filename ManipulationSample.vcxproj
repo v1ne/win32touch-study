@@ -110,6 +110,9 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -137,6 +140,9 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -158,6 +164,9 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -180,6 +189,9 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ComTouchDriver.cpp" />

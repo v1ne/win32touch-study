@@ -13,35 +13,27 @@
 
 class CCoreObject {
 public:
-    CCoreObject(HWND hwnd, int iTimerId, CD2DDriver* d2dDriver, bool canRotate);
-    ~CCoreObject();
-    BOOL Initialize(CDrawingObject* pDrawingObject);
+  CCoreObject(HWND hwnd, int iTimerId, CD2DDriver* d2dDriver, bool canRotate);
+  ~CCoreObject();
+  bool Initialize(CDrawingObject* pDrawingObject);
 
-    // Rendered object
-    CDrawingObject* doDrawing;
-    
-    // Manipulation and Inertia event sinks
-    CManipulationEventSink* manipulationEventSink;
-    CManipulationEventSink* inertiaEventSink;
-   
-    // Manipulation and Inertia processors
-    IManipulationProcessor* manipulationProc;
-    IInertiaProcessor* inertiaProc;
+  CDrawingObject* mpDrawingObject;
 
-    // This flag is set by the manipulation event sink
-    // when the ManipulationCompleted method is invoked
-    BOOL bIsInertiaActive;
+  CManipulationEventSink* mManipulationEventSink;
+  CManipulationEventSink* mInertiaEventSink;
+
+  IManipulationProcessor* mManipulationProc;
+  IInertiaProcessor* mInertiaProc;
+
+  // This flag is set by the mManipulation event sink
+  // when the ManipulationCompleted method is invoked
+  bool mIsInertiaActive;
 
 private:
-    HWND m_hWnd;
-
-    // Direct2D driver to pass to drawing object
-    CD2DDriver* m_d2dDriver; 
-
-    // Unique timer ID to pass to event sink
-    int m_iTimerId;
-
-    bool m_bCanRotate;
+  HWND mhWnd;
+  CD2DDriver* mD2dDriver;
+  int mTimerId;
+  bool mCanRotate;
 };
 
 #endif

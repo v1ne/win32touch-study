@@ -60,8 +60,8 @@ public:
         FLOAT cumulativeRotation) override;
     
     // Helper for creating a connection point
-    BOOL SetupConnPt(IUnknown* manipulationProc);
-    VOID RemoveConnPt();
+    bool SetupConnPt(IUnknown* manipulationProc);
+    void RemoveConnPt();
 
     STDMETHOD_(ULONG, AddRef)();
     STDMETHOD_(ULONG, Release)();

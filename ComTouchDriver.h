@@ -13,9 +13,7 @@
 #include <list>
 #include <vector>
 
-#define NUM_CORE_OBJECTS 4
 #define MOUSE_CURSOR_ID 0
-#define DEFAULT_PPI 96.0f
 
 class CComTouchDriver {
 public:
@@ -23,17 +21,15 @@ public:
     ~CComTouchDriver();
     
     // Initializes Core Objects, Manipulation Processors and Inertia Processors
-    BOOL Initialize();
+    bool Initialize();
 
     // Processes the input information and activates the appropriate processor
-    VOID ProcessInputEvent(const TOUCHINPUT* inData);
+    void ProcessInputEvent(const TOUCHINPUT* inData);
 
     // Sets up the initial state of the objects
-    VOID RenderInitialState(const int iCWidth, const int iCHeight);
+    void RenderInitialState(const int iCWidth, const int iCHeight);
 
-    // Processes all changes that include active inertia processors
-    // Note: ProcessChanges automatically calls RenderObjects()
-    VOID ProcessChanges();
+    void RunInertiaProcessorsAndRender();
         
     // Localizes point for high-DPI
     inline Point2F CComTouchDriver::LocalizePoint(Point2I p)
@@ -43,13 +39,13 @@ public:
 
 private:
     // Renders the objects to the screen
-    VOID RenderObjects();
+    void RenderObjects();
 
     // Event helpers for processing input events
 
-    VOID DownEvent(CCoreObject* coRef, const TOUCHINPUT* inData, BOOL* bFound);
-    VOID MoveEvent(const TOUCHINPUT* inData);
-    VOID UpEvent(const TOUCHINPUT* inData);
+    bool DownEvent(CCoreObject* coRef, const TOUCHINPUT* inData);
+    void MoveEvent(const TOUCHINPUT* inData);
+    void UpEvent(const TOUCHINPUT* inData);
 
     // Map of cursor ids and core obejcts
     std::map<DWORD, CCoreObject*> m_mCursorObject;
@@ -65,13 +61,10 @@ private:
     // Scale for converting between dpi's
     float mDpiScale = 1.0f;
 
-    // Keeps track of the number contacts being processed
-    unsigned int m_uNumContacts = 0;
-
-    CD2DDriver* m_d2dDriver;
+    CD2DDriver* mD2dDriver;
 
     // Handle to window
-    HWND m_hWnd;
+    HWND mhWnd;
 };
 
 #endif
