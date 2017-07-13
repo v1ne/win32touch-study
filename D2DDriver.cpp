@@ -29,10 +29,16 @@ HRESULT CD2DDriver::CreateDeviceIndependentResources() {
     hr = SUCCEEDED(hr) ? m_spDWriteFactory->CreateTextFormat(
       L"Calibri", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
       12, L"", &m_spFormatSmallText) : hr;
+    hr = SUCCEEDED(hr) ? m_spDWriteFactory->CreateTextFormat(
+      L"Calibri", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
+      18, L"", &m_spFormatMediumText) : hr;
     if (SUCCEEDED(hr)) {
       m_spFormatSmallText->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
       m_spFormatSmallText->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
       m_spFormatSmallText->SetReadingDirection(DWRITE_READING_DIRECTION_LEFT_TO_RIGHT);
+      m_spFormatMediumText->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+      m_spFormatMediumText->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+      m_spFormatMediumText->SetReadingDirection(DWRITE_READING_DIRECTION_LEFT_TO_RIGHT);
     }
 
     return hr;
@@ -68,10 +74,11 @@ HRESULT CD2DDriver::CreateDeviceResources() {
       m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::LightGray), &m_spLightGreyBrush);
       m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DarkGray), &m_spDarkGreyBrush);
       m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::CornflowerBlue), &m_spCornflowerBrush);
-      m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DimGray), &m_spTextFgBrush);
+      m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::DimGray), &m_spDimGreyBrush);
       m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::MediumSlateBlue), &m_spSomePinkishBlueBrush);
       m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::MediumSeaGreen), &m_spSomeGreenishBrush);
-      m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &m_spTransparentWhiteBrush);
+      m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::Black), &m_spSemitransparentDarkBrush);
+      m_spSemitransparentDarkBrush->SetOpacity(0.4f);
       m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::Black), &m_spBlackBrush);
       m_spRT->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Enum::White), &m_spWhiteBrush);
     }
@@ -85,7 +92,6 @@ HRESULT CD2DDriver::RenderBackground(Point2F size) {
     m_spBGBrush->SetEndPoint(D2D1::Point2F(size.x/2, size.y));
     D2D1_RECT_F background = D2D1::RectF(0, 0, size.x, size.y);
     m_spRT->FillRectangle(&background, m_spBGBrush);
-    m_spTransparentWhiteBrush->SetOpacity(0.015f);
 
     return S_OK;
 }
@@ -98,8 +104,8 @@ VOID CD2DDriver::DiscardDeviceResources() {
     m_spREBrush.Release();
     m_spGLBrush.Release();
     m_spBGBrush.Release();
-    m_spTransparentWhiteBrush.Release();
-    m_spTextFgBrush.Release();
+    m_spSemitransparentDarkBrush.Release();
+    m_spDimGreyBrush.Release();
     m_spLightGreyBrush.Release();
     m_spDarkGreyBrush.Release();
     m_spCornflowerBrush.Release();
@@ -166,9 +172,14 @@ ID2D1LinearGradientBrushPtr CD2DDriver::get_GradBrush(unsigned int uBrushType) {
   }
 }
 
-void CD2DDriver::RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len) {
-  m_spRT->DrawTextW(buf, UINT32(len), m_spFormatSmallText, rect, m_spTextFgBrush);
+void CD2DDriver::RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len, ID2D1Brush* pBrush) {
+  m_spRT->DrawTextW(buf, UINT32(len), m_spFormatSmallText, rect, pBrush);
 }
+
+void CD2DDriver::RenderMediumText(D2D1_RECT_F rect, const wchar_t* buf, size_t len, ID2D1Brush* pBrush) {
+  m_spRT->DrawTextW(buf, UINT32(len), m_spFormatMediumText, rect, pBrush);
+}
+
 
 
 void CD2DDriver::RenderTiltedRect(Point2F base, float distance, float degAngle, Point2F size, ID2D1Brush* pBrush) {

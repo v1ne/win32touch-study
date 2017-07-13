@@ -50,8 +50,16 @@ struct Point2 {
   Self& operator/=(T factor) { x /= factor; y /= factor; return *this; }
 
 
-  Self dot(const Self& other) const {
-    return {x * other.x, y * other.y};
+  Self mulByComponent(const Self& other) const {
+    return {x * other.x,  y * other.y};
+  }
+
+  T dot(const Self& other) const {
+    return x * other.x + y * other.y;
+  }
+
+  T mag() const {
+    return (T) ::sqrt(::pow(x, 2) + ::pow(y, 2));
   }
 
   friend Self minByComponent(const Self& a, const Self& b) {

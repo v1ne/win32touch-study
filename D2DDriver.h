@@ -43,7 +43,8 @@ public:
     ID2D1HwndRenderTargetPtr GetRenderTarget();
     ID2D1LinearGradientBrushPtr get_GradBrush(unsigned int uBrushType);
 
-    void RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len);
+    void RenderText(D2D1_RECT_F rect, const wchar_t* buf, size_t len, ID2D1Brush* pBrush);
+    void RenderMediumText(D2D1_RECT_F rect, const wchar_t* buf, size_t len, ID2D1Brush* pBrush);
     void RenderTiltedRect(Point2F basePos, float distance, float degAngle, Point2F size, ID2D1Brush* pBrush);
 
     VOID BeginDraw();
@@ -60,8 +61,8 @@ public:
     ID2D1SolidColorBrushPtr m_spCornflowerBrush;
     ID2D1SolidColorBrushPtr m_spSomePinkishBlueBrush;
     ID2D1SolidColorBrushPtr m_spSomeGreenishBrush;
-    ID2D1SolidColorBrushPtr m_spTransparentWhiteBrush;
-    ID2D1SolidColorBrushPtr m_spTextFgBrush;
+    ID2D1SolidColorBrushPtr m_spSemitransparentDarkBrush;
+    ID2D1SolidColorBrushPtr m_spDimGreyBrush;
 
 private:
     // Helper to create gradient resource
@@ -99,5 +100,6 @@ private:
     ID2D1GradientStopCollection *pGlossyStops;
 
     IDWriteTextFormatPtr m_spFormatSmallText;
+    IDWriteTextFormatPtr m_spFormatMediumText;
 };
 #endif

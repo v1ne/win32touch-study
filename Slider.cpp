@@ -20,6 +20,9 @@ public:
       , mpSlider(pParent) {
     mpManipulationProc->put_SupportedManipulations(
       MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ROTATE);
+    
+    mpManipulationProc->put_MinimumScaleRotateRadius(100'000.f);
+    m_lastMatrix = D2D1::Matrix3x2F::Identity();
   }
 
   ~DialOnALeash() override {
@@ -39,9 +42,10 @@ public:
         mContactsToTypeMap.emplace(pData->dwID, ContactTypes::PivotPoint);
         break;
       case 1:
-        if (mContactsToTypeMap.begin()->second == ContactTypes::PivotPoint)
+        if (mContactsToTypeMap.begin()->second == ContactTypes::PivotPoint) {
           mContactsToTypeMap.emplace(pData->dwID, ContactTypes::OuterHandle);
-        else
+          success = SUCCEEDED(mpManipulationProc->ProcessDownWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+        } else
           mContactsToTypeMap.emplace(pData->dwID, ContactTypes::PivotPoint);
         break;
       default:
@@ -49,7 +53,7 @@ public:
         break;
       }
 
-      success = SUCCEEDED(mpManipulationProc->ProcessDownWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+      //success = SUCCEEDED(mpManipulationProc->ProcessDownWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
       break; }
 
     case MOVE: {
@@ -60,9 +64,15 @@ public:
           mPos = pos - Size()/2.f;
           success = true;
           break;
-        case ContactTypes::OuterHandle:
+        case ContactTypes::OuterHandle: {
+          const auto distance = ::fmaxf(120.f, (Center() - pos).mag());
+          if (distance > 1.4f * mSize.x/2.f)
+            mSize = Point2F{2.f * distance / 1.4f};
+          if (distance < 0.7f * mSize.x/2.f)
+            mSize = Point2F{2.f * distance / 0.7f};
+
           success = SUCCEEDED(mpManipulationProc->ProcessMoveWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
-          break;
+          break; }
         default:
           break;
         }
@@ -70,13 +80,21 @@ public:
         success = SUCCEEDED(mpManipulationProc->ProcessMoveWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
       break; }
 
-    case UP:
-      mContactsToTypeMap.erase(pData->dwID);
-      success = SUCCEEDED(mpManipulationProc->ProcessUpWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+    case UP: {
+      auto iEntry = mContactsToTypeMap.find(pData->dwID);
+      if (iEntry != mContactsToTypeMap.end() && iEntry->second == ContactTypes::PivotPoint && mContactsToTypeMap.size() > 1) {
+        auto iFirst = mContactsToTypeMap.begin();
+        auto iOtherEntry = iFirst != iEntry ? iFirst : std::next(iFirst);
+        iOtherEntry->second = ContactTypes::PivotPoint;
+        success = SUCCEEDED(mpManipulationProc->CompleteManipulation());
+      }
+      else
+        success = SUCCEEDED(mpManipulationProc->ProcessUpWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
 
+      mContactsToTypeMap.erase(pData->dwID);
       if (mContactsToTypeMap.empty())
         mpSlider->HideDial();
-      break;
+      break; }
 
     case INERTIA:
       if(mIsInertiaActive) {
@@ -100,12 +118,15 @@ public:
     //Scale(params.dScale);
     //Translate(params.dTranslation, params.isExtrapolated);
 
-    const auto rawValue = mpSlider->mRawTouchValue += params.dRotation / (2*3.14159f);
-    mpSlider->mValue = ::fmaxf(0, ::fminf(1, rawValue));
+    const auto rawValue = mpSlider->mRawTouchValue + params.dRotation / (2*3.14159f);
+    const auto clampedRawValue = ::fmaxf(-0.1f, ::fminf(1.1f, rawValue));
+    mpSlider->mRawTouchValue = clampedRawValue;
+    mpSlider->mValue = ::fmaxf(0, ::fminf(1, clampedRawValue));
   }
 
   void ManipulationCompleted(ViewBase::ManipCompletedParams) {
-    mIsShown = false;
+    if (mContactsToTypeMap.empty())
+      mIsShown = false;
   }
 
   void Paint() override {
@@ -115,44 +136,52 @@ public:
     if((mpRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
       return;
 
-    const auto rotateMatrix = D2D1::Matrix3x2F::Rotation(
-      0,//m_fAngleCumulative,
-      (mRenderPos + mSize / 2.f).to<D2D1_POINT_2F>());
-
-    mpRenderTarget->SetTransform(&rotateMatrix);
-    m_lastMatrix = rotateMatrix;
+    const auto identityMatrix = D2D1::Matrix3x2F::Identity();
+    mpRenderTarget->SetTransform(&identityMatrix);
 
     const auto pos = Center();
     const auto innerRadius = mSize.x / 2.f;
     const auto outerRadius = innerRadius * 1.5f;
     D2D1_ELLIPSE background = {pos.to<D2D1_POINT_2F>(), outerRadius, outerRadius};
     mD2dDriver->m_spD2DFactory->CreateEllipseGeometry(background, &mBackground);
-    mpRenderTarget->FillGeometry(mBackground, mD2dDriver->m_spTransparentWhiteBrush);
+    mpRenderTarget->FillGeometry(mBackground, mD2dDriver->m_spSemitransparentDarkBrush);
 
     mpRenderTarget->FillEllipse({pos.to<D2D1_POINT_2F>(), innerRadius, innerRadius}, mD2dDriver->m_spWhiteBrush);
     mpRenderTarget->FillEllipse({pos.to<D2D1_POINT_2F>(), 30.f, 30.f}, mD2dDriver->m_spDarkGreyBrush);
 
+    const auto triangleAngle = 180.f;
+    const auto triangleStrokeSize = Point2F{16.f, 4.f};
+    const auto vecToTriangle = rotateDeg(Vec2Right(innerRadius + 2.f), triangleAngle);
+    mD2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle + 45, triangleStrokeSize, mD2dDriver->m_spWhiteBrush);
+    mD2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle - 45, triangleStrokeSize, mD2dDriver->m_spWhiteBrush);
+
+    const auto angleRange = 320.f;
+    const auto angleStep = angleRange/100;
+    const auto bigMarksEvery = 10;
     const auto shortMarkSize = Point2F{10.f, 1.f};
-    const auto longMarkSize = Point2F{15.f, 1.f};
-    const auto angularOffset = -mpSlider->mRawTouchValue * 360.f;
-    for(float i = 0; i < 360.f; i += 3.6f) {
-      auto markSize = (int(i) % 36) == 0 ? longMarkSize : shortMarkSize;
-      mD2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, i + angularOffset, markSize, mD2dDriver->m_spDarkGreyBrush);
+    const auto longMarkSize = Point2F{15.f, 3.f};
+    const auto angularOffset = -mpSlider->mRawTouchValue * angleRange + triangleAngle;
+    wchar_t buf[16];
+    int stepCount = 0;
+    const auto translateMatrix = D2D1::Matrix3x2F::Translation({0.f, -(innerRadius + 15.f)});
+    for(float i = 0; i < (angleRange < 360.f ? angleRange + angleStep : angleRange - angleStep); i += angleStep, ++stepCount) {
+      auto finalAngle = angularOffset + i;
+      auto markSize = i == 0
+        ? Point2F{innerRadius, longMarkSize.y}
+        : stepCount % bigMarksEvery == 0 ? longMarkSize : shortMarkSize;
+      markSize.x += i / 30.f;
+      mD2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, finalAngle, markSize, 
+        (i == 0 || i >= angleRange) ? mD2dDriver->m_spBlackBrush : mD2dDriver->m_spDarkGreyBrush);
+
+      if (!(stepCount % bigMarksEvery)) {
+        wsprintf(buf, L"%d%%", int(::roundf(100 * i / angleRange)));
+        const auto finalTransform = translateMatrix * D2D1::Matrix3x2F::Rotation(-finalAngle + 90.f, Center().to<D2D1_POINT_2F>());
+        mpRenderTarget->SetTransform(&finalTransform);
+        mD2dDriver->RenderMediumText({pos.x-25.f, pos.y-20.f, pos.x + 25.f, pos.y + 20.f}, buf, wcslen(buf), mD2dDriver->m_spWhiteBrush);
+        mpRenderTarget->SetTransform(&identityMatrix);
+      }
     }
 
-    const auto triangleAngle = 180.f;
-      const auto triangleStrokeSize = Point2F{16.f, 4.f};
-      const auto vecToTriangle = rotateDeg(Vec2Right(innerRadius), triangleAngle);
-      mD2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle + 45, triangleStrokeSize, mD2dDriver->m_spBlackBrush);
-      mD2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle - 45, triangleStrokeSize, mD2dDriver->m_spBlackBrush);
-
-    const auto identityMatrix = D2D1::Matrix3x2F::Identity();
-    mpRenderTarget->SetTransform(&identityMatrix);
-
-
-    mpRenderTarget->FillEllipse({Center().to<D2D1_POINT_2F>(), 30, 30}, mD2dDriver->m_spCornflowerBrush);
-    mpRenderTarget->FillEllipse({Pos().to<D2D1_POINT_2F>(), 30, 30}, mD2dDriver->m_spSomePinkishBlueBrush);
-    mpRenderTarget->FillEllipse({(Pos() + Size()).to<D2D1_POINT_2F>(), 30, 30}, mD2dDriver->m_spSomeGreenishBrush);
   }
 
   bool InRegion(Point2F pos) override {
@@ -161,10 +190,6 @@ public:
     BOOL b = FALSE;
     mBackground->FillContainsPoint(pos.to<D2D1_POINT_2F>(), &m_lastMatrix, &b);
     return b;
-  }
-
-  Point2F PivotPoint() override {
-    return mPos;
   }
 
   float PivotRadius() override {
@@ -295,6 +320,7 @@ void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX,
   const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * mSize.x);
 
   mRawTouchValue -= deltaY / mSliderHeight / dragScalingFactor;
+  mRawTouchValue = ::fmaxf(-0.1f, ::fminf(1.1f, mRawTouchValue));
   mValue = ::fmaxf(0, ::fminf(1, mRawTouchValue));
 }
 
@@ -349,7 +375,7 @@ void CSlider::PaintSlider()
 
   wchar_t buf[16];
   wsprintf(buf, L"%d%%", int(mValue*100));
-  mD2dDriver->RenderText({mRenderPos.x, mRenderPos.y, mRenderPos.x + mSize.x, mRenderPos.y + topBorder}, buf, wcslen(buf));
+  mD2dDriver->RenderText({mRenderPos.x, mRenderPos.y, mRenderPos.x + mSize.x, mRenderPos.y + topBorder}, buf, wcslen(buf), mD2dDriver->m_spDimGreyBrush);
 }
 
 
@@ -376,7 +402,7 @@ void CSlider::PaintKnob() {
 
   wchar_t buf[16];
   wsprintf(buf, L"%d%%", int(mValue*100));
-  mD2dDriver->RenderText({center.x - mSize.x/3, center.y - border.y, center.x + mSize.x/3, center.y + border.y}, buf, wcslen(buf));
+  mD2dDriver->RenderText({center.x - mSize.x/3, center.y - border.y, center.x + mSize.x/3, center.y + border.y}, buf, wcslen(buf), mD2dDriver->m_spDimGreyBrush);
 }
 
 

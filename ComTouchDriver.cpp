@@ -168,7 +168,7 @@ void CComTouchDriver::RenderInitialState(Point2I physicalClientArea) {
   const auto numSquareColumns = int(sqrt(NUM_CORE_OBJECTS));
   auto iObject = mCoreObjectsInInitialOrder.rbegin();
   for(int i = 0; i < NUM_CORE_OBJECTS; i++) {
-    const auto pos = clientArea - squareSize.dot(
+    const auto pos = clientArea - squareSize.mulByComponent(
       Point2I{i % numSquareColumns + 1, i / numSquareColumns + 1});
     ((CSquare*)*iObject)->ResetState(pos, clientArea, squareSize);
     ++iObject;
@@ -179,7 +179,7 @@ void CComTouchDriver::RenderInitialState(Point2I physicalClientArea) {
   const auto sliderDistance = sliderSize + sliderBorder;
   const auto numSliderColumns = int(sqrt(NUM_SLIDERS * sliderDistance.y / sliderDistance.x));
   for(int i = 0; i < NUM_SLIDERS; i++) {
-    const auto pos = sliderBorder + sliderDistance.dot(
+    const auto pos = sliderBorder + sliderDistance.mulByComponent(
       Point2I{i % numSliderColumns, i / numSliderColumns});
     ((CSlider*)*iObject)->ResetState(pos, clientArea, sliderSize);
     ++iObject;
