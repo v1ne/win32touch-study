@@ -9,21 +9,18 @@
 
 #include <math.h>
 
-HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationStarted(
-    FLOAT x,
-    FLOAT y)
-{
-    UNREFERENCED_PARAMETER(x);
-    UNREFERENCED_PARAMETER(y);
+HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationStarted(FLOAT x, FLOAT y) {
+  UNREFERENCED_PARAMETER(x);
+  UNREFERENCED_PARAMETER(y);
 
-    // Stop object if it is in the state of inertia
+  // Stop object if it is in the state of inertia
 
-    mpViewObject->mIsInertiaActive = FALSE;
-    KillTimer(m_hWnd, m_iTimerId);
+  mpViewObject->mIsInertiaActive = FALSE;
+  KillTimer(mhWnd, mTimerId);
 
-    mpViewObject->ManipulationStarted({x, y});
+  mpViewObject->ManipulationStarted({x, y});
 
-    return S_OK;
+  return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationDelta(
@@ -38,37 +35,35 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationDelta(
     FLOAT cumulativeTranslationY,
     FLOAT cumulativeScale,
     FLOAT cumulativeExpansion,
-    FLOAT cumulativeRotation)
-{
-    UNREFERENCED_PARAMETER(cumulativeRotation);
-    UNREFERENCED_PARAMETER(cumulativeExpansion);
-    UNREFERENCED_PARAMETER(cumulativeScale);
-    UNREFERENCED_PARAMETER(cumulativeTranslationX);
-    UNREFERENCED_PARAMETER(cumulativeTranslationY);
-    UNREFERENCED_PARAMETER(expansionDelta);
+    FLOAT cumulativeRotation) {
+  UNREFERENCED_PARAMETER(cumulativeRotation);
+  UNREFERENCED_PARAMETER(cumulativeExpansion);
+  UNREFERENCED_PARAMETER(cumulativeScale);
+  UNREFERENCED_PARAMETER(cumulativeTranslationX);
+  UNREFERENCED_PARAMETER(cumulativeTranslationY);
+  UNREFERENCED_PARAMETER(expansionDelta);
 
+  const auto IsInertiaProcessor = !mpManipulationProcessor;
 
-    HRESULT hr = S_OK;
+  mpViewObject->ManipulationDelta({{x, y},
+    {translationDeltaX, translationDeltaY},
+    scaleDelta, expansionDelta, rotationDelta,
+    {cumulativeTranslationX, cumulativeTranslationY},
+    cumulativeScale, cumulativeExpansion, cumulativeRotation, IsInertiaProcessor});
 
-    mpViewObject->ManipulationDelta({{x, y},
-      {translationDeltaX, translationDeltaY},
-      scaleDelta, expansionDelta, rotationDelta,
-      {cumulativeTranslationX, cumulativeTranslationY},
-      cumulativeScale, cumulativeExpansion, cumulativeRotation, m_bInertia});
+  HRESULT hr = S_OK;
+   if(!IsInertiaProcessor) {
+      const auto pivotPoint = mpViewObject->PivotPoint();
+      HRESULT hrPPX = mpManipulationProcessor->put_PivotPointX(pivotPoint.x);
+      HRESULT hrPPY = mpManipulationProcessor->put_PivotPointY(pivotPoint.y);
+      HRESULT hrPR  = mpManipulationProcessor->put_PivotRadius(mpViewObject->PivotRadius());
 
-     if(!m_bInertia) {
-        const auto pivotPoint = mpViewObject->PivotPoint();
-        const auto manipulationProc = mpViewObject->mManipulationProc;
-        HRESULT hrPPX = manipulationProc->put_PivotPointX(pivotPoint.x);
-        HRESULT hrPPY = manipulationProc->put_PivotPointY(pivotPoint.y);
-        HRESULT hrPR  = manipulationProc->put_PivotRadius(mpViewObject->PivotRadius());
-
-        if(FAILED(hrPPX) || FAILED(hrPPY) || FAILED(hrPR))
-        {
-            hr = E_FAIL;
-        }
-    }
-    return hr;
+      if(FAILED(hrPPX) || FAILED(hrPPY) || FAILED(hrPR))
+      {
+          hr = E_FAIL;
+      }
+  }
+  return hr;
 }
 
 HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
@@ -80,205 +75,165 @@ HRESULT STDMETHODCALLTYPE CManipulationEventSink::ManipulationCompleted(
     FLOAT cumulativeExpansion,
     FLOAT cumulativeRotation)
 {
-    UNREFERENCED_PARAMETER(cumulativeRotation);
-    UNREFERENCED_PARAMETER(cumulativeExpansion);
-    UNREFERENCED_PARAMETER(cumulativeScale);
-    UNREFERENCED_PARAMETER(cumulativeTranslationX);
-    UNREFERENCED_PARAMETER(cumulativeTranslationY);
-    UNREFERENCED_PARAMETER(x);
-    UNREFERENCED_PARAMETER(y);
+  UNREFERENCED_PARAMETER(cumulativeRotation);
+  UNREFERENCED_PARAMETER(cumulativeExpansion);
+  UNREFERENCED_PARAMETER(cumulativeScale);
+  UNREFERENCED_PARAMETER(cumulativeTranslationX);
+  UNREFERENCED_PARAMETER(cumulativeTranslationY);
+  UNREFERENCED_PARAMETER(x);
+  UNREFERENCED_PARAMETER(y);
 
-    IInertiaProcessor* ip = mpViewObject->mInertiaProc;
-    IManipulationProcessor* mp = mpViewObject->mManipulationProc;
+  HRESULT hr = S_OK;
+  if(mpManipulationProcessor)
+  {
+      HRESULT hrSI = SetupInertia(x, y);
+      HRESULT hrCO = S_OK;
 
-    HRESULT hr = S_OK;
-    if(!m_bInertia)
-    {
-        HRESULT hrSI = SetupInertia(x, y, ip, mp);
-        HRESULT hrCO = S_OK;
+      if(FAILED(hrSI) || FAILED(hrCO))
+      {
+          hr = E_FAIL;
+      }
 
-        if(FAILED(hrSI) || FAILED(hrCO))
-        {
-            hr = E_FAIL;
-        }
+      mpViewObject->mIsInertiaActive = TRUE;
 
-        // Set the core objects inertia state to TRUE so it can
-        // be processed when another object is being manipulated
-        mpViewObject->mIsInertiaActive = TRUE;
+      SetTimer(mhWnd, mTimerId, DESIRED_MILLISECONDS, NULL);
+  }
+  else
+  {
+      mpViewObject->mIsInertiaActive = FALSE;
 
-        // Kick off timer that handles inertia
-        SetTimer(m_hWnd, m_iTimerId, DESIRED_MILLISECONDS, NULL);
-    }
-    else
-    {
-        mpViewObject->mIsInertiaActive = FALSE;
+      mpViewObject->ManipulationCompleted({{x, y},
+        {cumulativeTranslationX, cumulativeTranslationY},
+        cumulativeScale, cumulativeExpansion, cumulativeRotation});
 
-        mpViewObject->ManipulationCompleted({{x, y},
-          {cumulativeTranslationX, cumulativeTranslationY},
-          cumulativeScale, cumulativeExpansion, cumulativeRotation});
+      KillTimer(mhWnd, mTimerId);
+  }
 
-        // Stop timer that handles inertia
-        KillTimer(m_hWnd, m_iTimerId);
-    }
-    return hr;
+  return hr;
 }
 
-HRESULT CManipulationEventSink::SetupInertia(float x, float y, IInertiaProcessor* ip, IManipulationProcessor* mp)
-{
-    HRESULT hr = S_OK;
+HRESULT CManipulationEventSink::SetupInertia(float x, float y) {
+  HRESULT hr = S_OK;
 
-    // Set desired properties for inertia events
+  HRESULT hrPutDD = mpInertiaProcessor->put_DesiredDeceleration(0.003f); // px/ms^2
+  HRESULT hrPutDAD = mpInertiaProcessor->put_DesiredAngularDeceleration(0.000015f); // rad/ms^2
 
-    // Deceleration for tranlations in pixel / msec^2
-    HRESULT hrPutDD = ip->put_DesiredDeceleration(0.003f);
+  HRESULT hrPutIOX = mpInertiaProcessor->put_InitialOriginX(x);
+  HRESULT hrPutIOY = mpInertiaProcessor->put_InitialOriginY(y);
 
-    // Deceleration for rotations in radians / msec^2
-    HRESULT hrPutDAD = ip->put_DesiredAngularDeceleration(0.000015f);
+  FLOAT fVX, fVY, fVR;
+  HRESULT hrPutVX = mpManipulationProcessor->GetVelocityX(&fVX);
+  HRESULT hrGetVY = mpManipulationProcessor->GetVelocityY(&fVY);
+  HRESULT hrGetAV = mpManipulationProcessor->GetAngularVelocity(&fVR);
 
-    // Set initial origins
+  HRESULT hrPutIVX = mpInertiaProcessor->put_InitialVelocityX(fVX);
+  HRESULT hrPutIVY = mpInertiaProcessor->put_InitialVelocityY(fVY);
+  HRESULT hrPutIAV = mpInertiaProcessor->put_InitialAngularVelocity(fVR);
 
-    HRESULT hrPutIOX = ip->put_InitialOriginX(x);
-    HRESULT hrPutIOY = ip->put_InitialOriginY(y);
+  if(FAILED(hrPutDD) || FAILED(hrPutDAD) || FAILED(hrPutIOX) || FAILED(hrPutIOY)
+      || FAILED(hrPutVX) || FAILED(hrGetVY) || FAILED(hrGetAV) || FAILED(hrPutIVX)
+      || FAILED(hrPutIVY) || FAILED(hrPutIAV))
+  {
+      hr = E_FAIL;
+  }
 
-    FLOAT fVX;
-    FLOAT fVY;
-    FLOAT fVR;
-
-    HRESULT hrPutVX = mp->GetVelocityX(&fVX);
-    HRESULT hrGetVY = mp->GetVelocityY(&fVY);
-    HRESULT hrGetAV = mp->GetAngularVelocity(&fVR);
-
-    // Set initial velocities for inertia processor
-
-    HRESULT hrPutIVX = ip->put_InitialVelocityX(fVX);
-    HRESULT hrPutIVY = ip->put_InitialVelocityY(fVY);
-    HRESULT hrPutIAV = ip->put_InitialAngularVelocity(fVR);
-
-    if(FAILED(hrPutDD) || FAILED(hrPutDAD) || FAILED(hrPutIOX) || FAILED(hrPutIOY)
-        || FAILED(hrPutVX) || FAILED(hrGetVY) || FAILED(hrGetAV) || FAILED(hrPutIVX)
-        || FAILED(hrPutIVY) || FAILED(hrPutIAV))
-    {
-        hr = E_FAIL;
-    }
-
-    return hr;
+  return hr;
 }
 
 ULONG CManipulationEventSink::AddRef()
 {
-    return ++m_cRefCount;
+  return ++mRefCount;
 }
 
 ULONG CManipulationEventSink::Release()
 {
-    m_cRefCount--;
+  mRefCount--;
 
-    if(m_cRefCount == 0)
-    {
-        delete this;
-        return 0;
-    }
-    return m_cRefCount;
+  if(mRefCount == 0) {
+    delete this;
+    return 0;
+  } else
+    return mRefCount;
 }
 
-HRESULT CManipulationEventSink::QueryInterface(REFIID riid, LPVOID *ppvObj)
-{
-    HRESULT hr = S_OK;
+HRESULT CManipulationEventSink::QueryInterface(REFIID riid, LPVOID *ppvObj) {
+  HRESULT hr = S_OK;
 
-    if(ppvObj == NULL)
-    {
-        hr = E_POINTER;
-    }
+  if(ppvObj == NULL) {
+    hr = E_POINTER;
+  } else {
+    *ppvObj = NULL;
 
-    if(!FAILED(hr))
-    {
-        *ppvObj = NULL;
+    if (IID__IManipulationEvents == riid)
+      *ppvObj = static_cast<_IManipulationEvents*>(this);
+    else if (IID_IUnknown == riid)
+      *ppvObj = static_cast<IUnknown*>(this);
 
-        if (IID__IManipulationEvents == riid)
-        {
-            *ppvObj = static_cast<_IManipulationEvents*>(this);
-        }
-        else if (IID_IUnknown == riid)
-        {
-            *ppvObj = static_cast<IUnknown*>(this);
-        }
+    if(*ppvObj)
+      AddRef();
+    else
+      hr = E_NOINTERFACE;
+  }
 
-        if(*ppvObj)
-        {
-            AddRef();
-        }
-        else
-        {
-            hr = E_NOINTERFACE;
-        }
-    }
-
-    return hr;
+  return hr;
 }
 
 // Set up the connection to a mManipulation or inertia processor
-bool CManipulationEventSink::SetupConnPt(IUnknown *mManipulationProc)
-{
-    BOOL success = FALSE;
-    IConnectionPointContainer* pConPointContainer = NULL;
+bool CManipulationEventSink::SetupConnPt(IUnknown *mManipulationProc) {
+  if (mpConnPoint != NULL) {
+    return false;
+  }
 
-    // Only connect if there isn't already an active connection
-    if (m_pConnPoint == NULL)
-    {
-        // Check if supports connectable objects
-        success = SUCCEEDED(mManipulationProc->QueryInterface(IID_IConnectionPointContainer,
-            (LPVOID*)&(pConPointContainer)));
+  BOOL success = FALSE;
+  IConnectionPointContainer* pConPointContainer = NULL;
+  // Check if supports connectable objects
+  success = SUCCEEDED(mManipulationProc->QueryInterface(IID_IConnectionPointContainer,
+    (LPVOID*)&(pConPointContainer)));
 
-        // Get connection point interface
-        if(success)
-        {
-            success = SUCCEEDED(pConPointContainer->FindConnectionPoint(
-                _uuidof(_IManipulationEvents),
-                &(m_pConnPoint)));
-        }
+  // Get connection point interface
+  if(success) {
+    success = SUCCEEDED(pConPointContainer->FindConnectionPoint(
+        _uuidof(_IManipulationEvents),
+        &(mpConnPoint)));
+  }
 
-        // Clean up connection point container
-        if (pConPointContainer != NULL)
-        {
-            pConPointContainer->Release();
-            pConPointContainer = NULL;
-        }
+  // Clean up connection point container
+  if (pConPointContainer != NULL) {
+    pConPointContainer->Release();
+    pConPointContainer = NULL;
+  }
 
-        // Hook event object to the connection point
-        IUnknown* pUnk = NULL;
-        if(success)
-        {
-            // Get pointer to mManipulation event sink's IUnknown pointer
-            success = SUCCEEDED(QueryInterface(IID_IUnknown, (LPVOID*)&pUnk));
-        }
+  // Hook event object to the connection point
+  IUnknown* pUnk = NULL;
+  if(success) {
+    // Get pointer to mManipulation event sink's IUnknown pointer
+    success = SUCCEEDED(QueryInterface(IID_IUnknown, (LPVOID*)&pUnk));
+  }
 
-        // Establish connection point to callback interface
-        if(success)
-        {
-            success = SUCCEEDED(m_pConnPoint->Advise(pUnk, &(m_uID)));
-        }
+  // Establish connection point to callback interface
+  if(success) {
+    success = SUCCEEDED(mpConnPoint->Advise(pUnk, &(mID)));
+  }
 
-        // Clean up IUnknown pointer
-        if(pUnk != NULL)
-        {
-            pUnk->Release();
-        }
+  // Clean up IUnknown pointer
+  if(pUnk != NULL) {
+    pUnk->Release();
+  }
 
-        if (!success && m_pConnPoint != NULL)
-        {
-            m_pConnPoint->Release();
-            m_pConnPoint = NULL;
-        }
-    }
+  if (!success && mpConnPoint != NULL)
+  {
+    mpConnPoint->Release();
+    mpConnPoint = NULL;
+  }
 
-    return success;
+  return success;
 }
 
 void CManipulationEventSink::RemoveConnPt() {
-  if(!m_pConnPoint)
+  if(!mpConnPoint)
     return;
 
-  m_pConnPoint->Unadvise(m_uID);
-  m_pConnPoint->Release();
-  m_pConnPoint = NULL;
+  mpConnPoint->Unadvise(mID);
+  mpConnPoint->Release();
+  mpConnPoint = NULL;
 }

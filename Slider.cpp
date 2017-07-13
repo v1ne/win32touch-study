@@ -102,12 +102,15 @@ public:
   CSlider* mpSlider;
 };
 
+
+
 CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode)
   : CTransformableDrawingObject(hWnd, d2dDriver)
   , mMode(mode)
   , mType(type)
   , mValue(::rand() / float(RAND_MAX))
 { }
+
 
 CSlider::~CSlider() {
   HideDial();

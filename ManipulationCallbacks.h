@@ -44,11 +44,6 @@ public:
   virtual Point2F PivotPoint() = 0;
   virtual float PivotRadius() = 0;
 
-  IManipulationProcessor* mManipulationProc = nullptr;
-  CManipulationEventSink* mManipulationEventSink = nullptr;
-  IInertiaProcessor* mInertiaProc = nullptr;
-  CManipulationEventSink* mInertiaEventSink = nullptr;
-
   // This flag is set by the mManipulation event sink
   // when the ManipulationCompleted method is invoked
   bool mIsInertiaActive = false;

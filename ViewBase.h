@@ -21,6 +21,9 @@ public:
   ViewBase(HWND hwnd, CD2DDriver* d2dDriver);
   virtual ~ViewBase();
     
+  enum TouchEventType {DOWN, MOVE, UP, INERTIA};
+  virtual bool HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPUT* pData);
+
   virtual void Paint() = 0;
   virtual bool InRegion(Point2F pos) = 0;
 
@@ -41,6 +44,10 @@ protected:
   Point2F mPos;
   Point2F mSize;
 
+  IManipulationProcessor* mpManipulationProc = nullptr;
+  CManipulationEventSink* mManipulationEventSink = nullptr;
+  IInertiaProcessor* mpInertiaProc = nullptr;
+  CManipulationEventSink* mInertiaEventSink = nullptr;
 private:
   bool InitializeBase();
 };

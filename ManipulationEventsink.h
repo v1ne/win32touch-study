@@ -18,13 +18,16 @@
 
 class CManipulationEventSink : _IManipulationEvents {
 public:
-  CManipulationEventSink::CManipulationEventSink(HWND hWnd, IManipulationCallbacks *pViewObject, bool inertia)
+  CManipulationEventSink::CManipulationEventSink(
+    HWND hWnd, IManipulationCallbacks *pViewObject,
+    IManipulationProcessor* pManipulationProcessor, IInertiaProcessor* pInertiaProcessor)
     : mpViewObject(pViewObject)
-    , m_hWnd(hWnd)
-    , m_iTimerId((int)(ptrdiff_t)this) // it's unique enough for a hack
-    , m_bInertia(inertia)
-    , m_pConnPoint(NULL)
-    , m_cRefCount(1)
+    , mpManipulationProcessor(pManipulationProcessor)
+    , mpInertiaProcessor(pInertiaProcessor)
+    , mhWnd(hWnd)
+    , mTimerId((int)(ptrdiff_t)this) // it's unique enough for a hack
+    , mpConnPoint(NULL)
+    , mRefCount(1)
   {
   }
    
@@ -61,15 +64,16 @@ public:
   STDMETHOD(QueryInterface)(REFIID riid, LPVOID *ppvObj);
 
 private:
-  HRESULT SetupInertia(float x, float y, IInertiaProcessor* ip, IManipulationProcessor* mp);
+  HRESULT SetupInertia(float x, float y);
   
-  IConnectionPoint* m_pConnPoint;
-  volatile unsigned int m_cRefCount;
-  DWORD m_uID;
   IManipulationCallbacks* mpViewObject;
-  HWND m_hWnd;
-  int m_iTimerId;
-  bool m_bInertia;
+  IManipulationProcessor* mpManipulationProcessor; // nullptr for sink on an inertia processor
+  IInertiaProcessor* mpInertiaProcessor;
+  HWND mhWnd;
+  int mTimerId;
+  IConnectionPoint* mpConnPoint;
+  volatile unsigned int mRefCount;
+  DWORD mID;
 };
 
 #endif

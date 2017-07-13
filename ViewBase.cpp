@@ -18,36 +18,6 @@
 bool gShiftPressed = false;
 
 
-bool ViewBase::InitializeBase() {
-  if(FAILED(CoCreateInstance(CLSID_ManipulationProcessor, NULL,
-      CLSCTX_INPROC_SERVER, IID_IUnknown, (VOID**)(&mManipulationProc))))
-    return false;
-
-  if(FAILED(CoCreateInstance(CLSID_InertiaProcessor, NULL,
-      CLSCTX_INPROC_SERVER, IID_IUnknown, (VOID**)(&mInertiaProc))))
-    return false;
-
-  if(!mCanRotate) {
-    auto manipulations = MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ALL;
-    // TODO: Besser lösen!
-    //manipulations &= ~MANIPULATION_ROTATE;
-    manipulations = MANIPULATION_ROTATE;
-    mManipulationProc->put_SupportedManipulations(manipulations);
-  }
-
-  mManipulationEventSink = new CManipulationEventSink(mhWnd, this, FALSE);
-  if(!mManipulationEventSink->SetupConnPt(mManipulationProc))
-    return false;
-
-  mInertiaEventSink = new CManipulationEventSink(mhWnd, this, TRUE);
-  if(!mInertiaEventSink->SetupConnPt(mInertiaProc))
-    return false;
-
-  mIsInertiaActive = FALSE;
-
-  return true;
-}
-
 ViewBase::ViewBase(HWND hWnd, CD2DDriver* pD2dDriver)
   : mhWnd(hWnd)
   , mpRenderTarget(pD2dDriver->GetRenderTarget())
@@ -63,9 +33,63 @@ ViewBase::~ViewBase() {
   mInertiaEventSink->Release();
   mInertiaEventSink = NULL;
 
-  mManipulationProc->Release();
+  mpManipulationProc->Release();
+  mpInertiaProc->Release();
+}
 
-  mInertiaProc->Release();
+
+bool ViewBase::InitializeBase() {
+  if(FAILED(CoCreateInstance(CLSID_ManipulationProcessor, NULL,
+      CLSCTX_INPROC_SERVER, IID_IUnknown, (VOID**)(&mpManipulationProc))))
+    return false;
+
+  if(FAILED(CoCreateInstance(CLSID_InertiaProcessor, NULL,
+      CLSCTX_INPROC_SERVER, IID_IUnknown, (VOID**)(&mpInertiaProc))))
+    return false;
+
+  if(!mCanRotate) {
+    auto manipulations = MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ALL;
+    // TODO: Besser lösen!
+    //manipulations &= ~MANIPULATION_ROTATE;
+    manipulations = MANIPULATION_ROTATE;
+    mpManipulationProc->put_SupportedManipulations(manipulations);
+  }
+
+  mManipulationEventSink = new CManipulationEventSink(mhWnd, this, mpManipulationProc, mpInertiaProc);
+  if(!mManipulationEventSink->SetupConnPt(mpManipulationProc))
+    return false;
+
+  mInertiaEventSink = new CManipulationEventSink(mhWnd, this, nullptr, mpInertiaProc);
+  if(!mInertiaEventSink->SetupConnPt(mpInertiaProc))
+    return false;
+
+  mIsInertiaActive = FALSE;
+
+  return true;
+}
+
+
+bool ViewBase::HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPUT* pData)
+{
+  bool success = false;
+  switch(type) {
+  case DOWN:
+    success = SUCCEEDED(mpManipulationProc->ProcessDownWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+    break;
+  case MOVE:
+    success = SUCCEEDED(mpManipulationProc->ProcessMoveWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+    break;
+  case UP:
+    success = SUCCEEDED(mpManipulationProc->ProcessUpWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
+    break;
+  case INERTIA:
+    if(mIsInertiaActive) {
+      BOOL bCompleted = FALSE;
+      success = SUCCEEDED(mpInertiaProc->Process(&bCompleted));
+    }
+  }
+
+  return success;
 }
 
 

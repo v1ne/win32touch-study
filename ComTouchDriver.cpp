@@ -61,33 +61,32 @@ CComTouchDriver::~CComTouchDriver() {
   CoUninitialize();
 }
 
-void CComTouchDriver::ProcessInputEvent(const TOUCHINPUT* inData) {
-  DWORD dwCursorID = inData->dwID;
-  DWORD dwEvent = inData->dwFlags;
+void CComTouchDriver::ProcessInputEvent(const TOUCHINPUT* pData) {
+  DWORD dwCursorID = pData->dwID;
+  DWORD dwEvent = pData->dwFlags;
 
   if(dwEvent & TOUCHEVENTF_DOWN) {
     for(const auto& pObject: mCoreObjects) {
-      auto found = DownEvent(pObject, inData);
+      auto found = DownEvent(pObject, pData);
       if(found) break;
     }
   } else if(dwEvent & TOUCHEVENTF_MOVE) {
-    MoveEvent(inData);
+    MoveEvent(pData);
   } else if(dwEvent & TOUCHEVENTF_UP) {
-    UpEvent(inData);
+    UpEvent(pData);
   }
 }
 
-bool CComTouchDriver::DownEvent(ViewBase* pView, const TOUCHINPUT* inData) {
-  auto p = PhysicalToLogical({inData->x, inData->y});
+bool CComTouchDriver::DownEvent(ViewBase* pView, const TOUCHINPUT* pData) {
+  auto p = PhysicalToLogical({pData->x, pData->y});
 
   if(!pView->InRegion(p))
     return false;
 
-  DWORD dwCursorID = inData->dwID;
-  if(FAILED(pView->mManipulationProc->ProcessDownWithTime(dwCursorID, p.x, p.y, inData->dwTime)))
+  if(FAILED(pView->HandleTouchEvent(ViewBase::DOWN, p, pData)))
     return false;
 
-  mCursorIdToObjectMap.insert(std::pair<DWORD, ViewBase*>(dwCursorID, pView));
+  mCursorIdToObjectMap.insert(std::pair<DWORD, ViewBase*>(pData->dwID, pView));
 
   mCoreObjects.remove(pView);
   mCoreObjects.push_front(pView);
@@ -97,33 +96,29 @@ bool CComTouchDriver::DownEvent(ViewBase* pView, const TOUCHINPUT* inData) {
   return true;
 }
 
-void CComTouchDriver::MoveEvent(const TOUCHINPUT* inData) {
-  DWORD dwCursorID = inData->dwID;
-  auto p = PhysicalToLogical({inData->x, inData->y});
+void CComTouchDriver::MoveEvent(const TOUCHINPUT* pData) {
+  DWORD dwCursorID = pData->dwID;
+  auto p = PhysicalToLogical({pData->x, pData->y});
 
   auto iEntry = mCursorIdToObjectMap.find(dwCursorID);
   if(iEntry != mCursorIdToObjectMap.end())
-    iEntry->second->mManipulationProc->ProcessMoveWithTime(dwCursorID, p.x, p.y, inData->dwTime);
+    iEntry->second->HandleTouchEvent(ViewBase::MOVE, p, pData);
 }
 
-void CComTouchDriver::UpEvent(const TOUCHINPUT* inData) {
-  DWORD dwCursorID = inData->dwID;
-  auto p = PhysicalToLogical({inData->x, inData->y});
+void CComTouchDriver::UpEvent(const TOUCHINPUT* pData) {
+  DWORD dwCursorID = pData->dwID;
+  auto p = PhysicalToLogical({pData->x, pData->y});
 
   auto iEntry = mCursorIdToObjectMap.find(dwCursorID);
   if(iEntry != mCursorIdToObjectMap.end()) {
-    iEntry->second->mManipulationProc->ProcessUpWithTime(dwCursorID, p.x, p.y, inData->dwTime);
+    iEntry->second->HandleTouchEvent(ViewBase::UP, p, pData);
     mCursorIdToObjectMap.erase(dwCursorID);
   }
 }
 
 void CComTouchDriver::RunInertiaProcessorsAndRender() {
-  for(const auto& pObject: mCoreObjects) {
-    if(pObject->mIsInertiaActive == TRUE) {
-      BOOL bCompleted = FALSE;
-      pObject->mInertiaProc->Process(&bCompleted);
-    }
-  }
+  for(const auto& pObject: mCoreObjects)
+    pObject->HandleTouchEvent(ViewBase::INERTIA, {}, nullptr);
 
   RenderObjects();
 }
