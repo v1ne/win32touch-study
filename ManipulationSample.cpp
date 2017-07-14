@@ -160,34 +160,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     break;
 
   case WM_MOUSEMOVE:
-    if(LOWORD(wParam) == MK_LBUTTON)
-    {
+    if(LOWORD(wParam) & MK_LBUTTON) {
       FillInputData(&tInput, MOUSE_CURSOR_ID, TOUCHEVENTF_MOVE, (DWORD)GetMessageTime(),LOWORD(lParam), HIWORD(lParam));
       gpTouchDriver->ProcessInputEvent(&tInput);
       gpTouchDriver->RunInertiaProcessorsAndRender();
     }
-
     break;
 
   case WM_LBUTTONUP:
     FillInputData(&tInput, MOUSE_CURSOR_ID, TOUCHEVENTF_UP, (DWORD)GetMessageTime(),LOWORD(lParam), HIWORD(lParam));
     gpTouchDriver->ProcessInputEvent(&tInput);
-
     break;
 
   case WM_DESTROY:
     PostQuitMessage(0);
     return 1;
 
-  case WM_PAINT: {
+  case WM_SETFOCUS:
+  case WM_SIZE: {
     RECT rect;
     ::GetClientRect(ghWnd, &rect);
-
-    BeginPaint(ghWnd, &ps);
     gpTouchDriver->RenderInitialState({rect.right - rect.left, rect.bottom - rect.top});
+    break; }
+
+  case WM_PAINT:
+    BeginPaint(ghWnd, &ps);
+    gpTouchDriver->RenderObjects();
     EndPaint(ghWnd, &ps);
     break;
-    }
+
   case WM_TIMER:
     gpTouchDriver->RunInertiaProcessorsAndRender();
     break;

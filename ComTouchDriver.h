@@ -36,12 +36,9 @@ public:
         return Point2F(p) / mPhysicalPointsPerLogicalPoint;
     }
 
-private:
-    // Renders the objects to the screen
     void RenderObjects();
 
-    // Event helpers for processing input events
-
+private:
     bool DownEvent(ViewBase* pViewBase, const TOUCHINPUT* inData);
     void MoveEvent(const TOUCHINPUT* inData);
     void UpEvent(const TOUCHINPUT* inData);

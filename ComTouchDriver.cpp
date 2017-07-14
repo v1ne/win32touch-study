@@ -105,8 +105,7 @@ bool CComTouchDriver::DownEvent(ViewBase* pView, const TOUCHINPUT* pData) {
   mCoreObjects.remove(pView);
   mCoreObjects.push_front(pView);
 
-  RenderObjects(); // Renders objects to bring new object to front
-
+  ::InvalidateRect(mhWnd, NULL, FALSE);
   return true;
 }
 
@@ -134,7 +133,7 @@ void CComTouchDriver::RunInertiaProcessorsAndRender() {
   for(const auto& pObject: mCoreObjects)
     pObject->HandleTouchEvent(ViewBase::INERTIA, {}, nullptr);
 
-  RenderObjects();
+  ::InvalidateRect(mhWnd, NULL, FALSE);
 }
 
 void CComTouchDriver::RenderObjects() {
@@ -201,5 +200,5 @@ void CComTouchDriver::RenderInitialState(Point2I physicalClientArea) {
     ((CSlider*)*iObject)->ResetState(pos, clientArea, knobSize);
   }
 
-  RenderObjects();
+  InvalidateRect(mhWnd, NULL, FALSE);
 }
