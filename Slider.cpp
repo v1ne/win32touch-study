@@ -15,14 +15,20 @@
 
 class DialOnALeash: public CTransformableDrawingObject {
 public:
-  DialOnALeash::DialOnALeash(HWND hWnd, CD2DDriver* d2dDriver, CSlider* pParent)
+  static constexpr auto sInnerRadius = 150.f;
+  static constexpr auto sAngleRange = 320.f;
+
+  DialOnALeash::DialOnALeash(HWND hWnd, CD2DDriver* d2dDriver, CSlider* pParent, Point2F center)
       : CTransformableDrawingObject(hWnd, d2dDriver)
       , mpSlider(pParent) {
     mpManipulationProc->put_SupportedManipulations(
       MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ROTATE);
     
-    mpManipulationProc->put_MinimumScaleRotateRadius(100'000.f);
+    //mpManipulationProc->put_MinimumScaleRotateRadius(100'000.f);
     m_lastMatrix = D2D1::Matrix3x2F::Identity();
+
+    mSize = Point2F{2.f * sInnerRadius + 100.f};
+    ResetState(center - mSize/2.f, mClientArea, mSize);
   }
 
   ~DialOnALeash() override {
@@ -65,11 +71,15 @@ public:
           success = true;
           break;
         case ContactTypes::OuterHandle: {
-          const auto distance = ::fmaxf(120.f, (Center() - pos).mag());
-          if (distance > 1.4f * mSize.x/2.f)
-            mSize = Point2F{2.f * distance / 1.4f};
-          if (distance < 0.7f * mSize.x/2.f)
-            mSize = Point2F{2.f * distance / 0.7f};
+          const auto center = Center();
+          const auto fingerDistance = ::fmaxf(120.f, (center - pos).mag());
+          const auto currentOuterRadius = mSize.x/2;
+          if (fingerDistance > 0.9f * currentOuterRadius)
+            mSize = Point2F{2.f * fingerDistance / 0.9f};
+          if (fingerDistance < 0.5f * mSize.x/2.f)
+            mSize = Point2F{2.f * fingerDistance / 0.5f};
+
+          mPos = center - mSize/2.f;
 
           success = SUCCEEDED(mpManipulationProc->ProcessMoveWithTime(pData->dwID, pos.x, pos.y, pData->dwTime));
           break; }
@@ -140,8 +150,8 @@ public:
     mpRenderTarget->SetTransform(&identityMatrix);
 
     const auto pos = Center();
-    const auto innerRadius = mSize.x / 2.f;
-    const auto outerRadius = innerRadius * 1.5f;
+    const auto innerRadius = sInnerRadius;
+    const auto outerRadius = mSize.x/2;
     D2D1_ELLIPSE background = {pos.to<D2D1_POINT_2F>(), outerRadius, outerRadius};
     mD2dDriver->m_spD2DFactory->CreateEllipseGeometry(background, &mBackground);
     mpRenderTarget->FillGeometry(mBackground, mD2dDriver->m_spSemitransparentDarkBrush);
@@ -155,26 +165,25 @@ public:
     mD2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle + 45, triangleStrokeSize, mD2dDriver->m_spWhiteBrush);
     mD2dDriver->RenderTiltedRect(pos + vecToTriangle, 0, triangleAngle - 45, triangleStrokeSize, mD2dDriver->m_spWhiteBrush);
 
-    const auto angleRange = 320.f;
-    const auto angleStep = angleRange/100;
+    const auto angleStep = sAngleRange/100;
     const auto bigMarksEvery = 10;
     const auto shortMarkSize = Point2F{10.f, 1.f};
     const auto longMarkSize = Point2F{15.f, 3.f};
-    const auto angularOffset = -mpSlider->mRawTouchValue * angleRange + triangleAngle;
+    const auto angularOffset = -mpSlider->mRawTouchValue * sAngleRange + triangleAngle;
     wchar_t buf[16];
     int stepCount = 0;
     const auto translateMatrix = D2D1::Matrix3x2F::Translation({0.f, -(innerRadius + 15.f)});
-    for(float i = 0; i < (angleRange < 360.f ? angleRange + angleStep : angleRange - angleStep); i += angleStep, ++stepCount) {
+    for(float i = 0; i < (sAngleRange < 360.f ? sAngleRange + angleStep : sAngleRange - angleStep); i += angleStep, ++stepCount) {
       auto finalAngle = angularOffset + i;
       auto markSize = i == 0
         ? Point2F{innerRadius, longMarkSize.y}
         : stepCount % bigMarksEvery == 0 ? longMarkSize : shortMarkSize;
       markSize.x += i / 30.f;
       mD2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, finalAngle, markSize, 
-        (i == 0 || i >= angleRange) ? mD2dDriver->m_spBlackBrush : mD2dDriver->m_spDarkGreyBrush);
+        (i == 0 || i >= sAngleRange) ? mD2dDriver->m_spBlackBrush : mD2dDriver->m_spDarkGreyBrush);
 
       if (!(stepCount % bigMarksEvery)) {
-        wsprintf(buf, L"%d%%", int(::roundf(100 * i / angleRange)));
+        wsprintf(buf, L"%d%%", int(::roundf(100 * i / sAngleRange)));
         const auto finalTransform = translateMatrix * D2D1::Matrix3x2F::Rotation(-finalAngle + 90.f, Center().to<D2D1_POINT_2F>());
         mpRenderTarget->SetTransform(&finalTransform);
         mD2dDriver->RenderMediumText({pos.x-25.f, pos.y-20.f, pos.x + 25.f, pos.y + 20.f}, buf, wcslen(buf), mD2dDriver->m_spWhiteBrush);
@@ -422,10 +431,7 @@ void CSlider::MakeDial(Point2F center) {
   if(mpDial)
     ::OutputDebugStringA("Dial already present. You're too fast!");
   else
-    mpDial = new DialOnALeash(mhWnd, mD2dDriver, this);
-
-  const auto dialSize = Point2F{300.f};
-  mpDial->ResetState(center - dialSize/2.f, mClientArea, dialSize);
+    mpDial = new DialOnALeash(mhWnd, mD2dDriver, this, center);
 }
 
 

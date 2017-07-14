@@ -12,7 +12,6 @@
 #endif
 
 #include "ComTouchDriver.h"
-#include "resource.h"
 
 #include <memory>
 #include <tchar.h>
@@ -20,23 +19,14 @@
 #include <windows.h>
 
 
-#define MAX_LOADSTRING 100
-
-HINSTANCE ghInstance;
 HWND ghWnd;
-WCHAR gWindowClass[MAX_LOADSTRING];
-WCHAR gMainTitle[MAX_LOADSTRING];
-int giCWidth;
-int giCHeight;
-
 std::unique_ptr<CComTouchDriver> gpTouchDriver;
 
-// Forward declarations of functions
-ATOM        MyRegisterClass(HINSTANCE hInst);
-BOOL        InitInstance(HINSTANCE hinst, int nCmdShow);
-LRESULT CALLBACK  WndProc(HWND, UINT, WPARAM, LPARAM);
-VOID        SetTabletInputServiceProperties();
-VOID        FillInputData(TOUCHINPUT* inData, DWORD cursor, DWORD eType, DWORD time, int x, int y);
+ATOM MyRegisterClass(HINSTANCE hInst);
+BOOL InitInstance(HINSTANCE hinst, int nCmdShow, ATOM hClass);
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+void SetTabletInputServiceProperties();
+void FillInputData(TOUCHINPUT* inData, DWORD cursor, DWORD eType, DWORD time, int x, int y);
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR pCmdLine, int nCmdShow) {
   UNREFERENCED_PARAMETER(pCmdLine);
@@ -45,12 +35,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR pCmdLine, int nCmdS
   if(FAILED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED)))
   return 0;
 
-  LoadString(hInstance, IDS_WINDOW, gWindowClass, MAX_LOADSTRING);
-  LoadString(hInstance, IDS_CAPTION, gMainTitle, MAX_LOADSTRING);
-
-  MyRegisterClass(hInstance);
-
-  if (!InitInstance(hInstance, SW_SHOWMAXIMIZED)) {
+  if (!InitInstance(hInstance, SW_SHOWMAXIMIZED, MyRegisterClass(hInstance))) {
     wprintf(L"Failed to initialize application");
     return 0;
   }
@@ -77,21 +62,18 @@ ATOM MyRegisterClass(HINSTANCE hInst)
   wc.hInstance = hInst;
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-  wc.lpszClassName = gWindowClass;
+  wc.lpszClassName = L"Win32TouchSlidersExperiment";
 
   return RegisterClassEx(&wc);
 }
 
 // Initialize Instance
-BOOL InitInstance(HINSTANCE hInst, int nCmdShow)
+BOOL InitInstance(HINSTANCE hInst, int nCmdShow, ATOM hClass)
 {
   BOOL success = TRUE;
 
-  // Store instance handler in global variable
-  ghInstance = hInst;
-
-  ghWnd = CreateWindowEx(0, gWindowClass, gMainTitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-    CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, ghInstance, 0);
+  ghWnd = CreateWindowEx(0, MAKEINTATOM(hClass), L"Win32 Touch Sliders", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+    CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInst, 0);
 
 
   if(!ghWnd)
@@ -211,7 +193,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 // Fills the input data received from the mouse and builds the tagTOUCHINPUT struct
 
-VOID FillInputData(TOUCHINPUT* inData, DWORD cursor, DWORD eType, DWORD time, int x, int y)
+void FillInputData(TOUCHINPUT* inData, DWORD cursor, DWORD eType, DWORD time, int x, int y)
 {
   inData->dwID = cursor;
   inData->dwFlags = eType;
@@ -220,7 +202,7 @@ VOID FillInputData(TOUCHINPUT* inData, DWORD cursor, DWORD eType, DWORD time, in
   inData->y = y;
 }
 
-VOID SetTabletInputServiceProperties()
+void SetTabletInputServiceProperties()
 {
   DWORD_PTR dwHwndTabletProperty =
   TABLET_DISABLE_PRESSANDHOLD | // disables press and hold (right-click) gesture
@@ -231,5 +213,4 @@ VOID SetTabletInputServiceProperties()
   ATOM atom = ::GlobalAddAtom(MICROSOFT_TABLETPENSERVICE_PROPERTY);
   SetProp(ghWnd, MICROSOFT_TABLETPENSERVICE_PROPERTY, reinterpret_cast<HANDLE>(dwHwndTabletProperty));
   GlobalDeleteAtom(atom);
-
 }

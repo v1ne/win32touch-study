@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="ManipulationSample"
+	Name="Win32TouchSliders"
 	ProjectGUID="{58997664-D4E9-4C0C-AFF7-5B8E209B11AE}"
-	RootNamespace="ManipulationSample"
+	RootNamespace="Win32TouchSliders"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -370,7 +370,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ManipulationSample.cpp"
+				RelativePath=".\Win32TouchSliders.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -428,7 +428,7 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\ManipulationSample.rc"
+				RelativePath=".\Win32TouchSliders.rc"
 				>
 			</File>
 		</Filter>
