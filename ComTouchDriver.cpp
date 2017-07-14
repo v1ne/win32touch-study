@@ -39,14 +39,17 @@ bool CComTouchDriver::Initialize() {
     mCoreObjects.push_front(new CSquare(mhWnd, mD2dDriver, CSquare::DrawingColor(i % 4)));
   }
 
+  uint8_t numController = 0;
+
   for (int i = 0; i < NUM_SLIDERS + 1; i++) {
     mCoreObjects.push_front(new CSlider(mhWnd, mD2dDriver, CSlider::TYPE_SLIDER,
-      i < NUM_SLIDERS ? CSlider::InteractionMode(i % CSlider::NUM_MODES) : CSlider::MODE_RELATIVE));
+      i < NUM_SLIDERS ? CSlider::InteractionMode(i % CSlider::NUM_MODES) : CSlider::MODE_RELATIVE,
+      numController++));
   }
 
   for (int i = 0; i < NUM_KNOBS; i++) {
     mCoreObjects.push_front(new CSlider(mhWnd, mD2dDriver,
-      CSlider::TYPE_KNOB, CSlider::InteractionMode(i % CSlider::NUM_MODES)));
+      CSlider::TYPE_KNOB, CSlider::InteractionMode(i % CSlider::NUM_MODES), numController++));
   }
 
   mCoreObjectsInInitialOrder.reserve(mCoreObjects.size());

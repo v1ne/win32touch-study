@@ -101,7 +101,7 @@
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dwrite.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;dwrite.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName)</ProgramDatabaseFile>
@@ -131,7 +131,7 @@
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dwrite.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;dwrite.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName)</ProgramDatabaseFile>
@@ -155,7 +155,7 @@
     </ClCompile>
     <Link>
       <AdditionalOptions>/NXCOMPAT %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>dwrite.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;dwrite.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -180,7 +180,7 @@
       <DebugInformationFormat />
     </ClCompile>
     <Link>
-      <AdditionalDependencies>dwrite.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;dwrite.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -196,6 +196,7 @@
   <ItemGroup>
     <ClCompile Include="ComTouchDriver.cpp" />
     <ClCompile Include="D2DDriver.cpp" />
+    <ClCompile Include="MidiOutput.cpp" />
     <ClCompile Include="ViewBase.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="ManipulationEventsink.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="ComTouchDriver.h" />
     <ClInclude Include="D2DDriver.h" />
     <ClInclude Include="ManipulationCallbacks.h" />
+    <ClInclude Include="MidiOutput.h" />
     <ClInclude Include="ViewBase.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="ManipulationEventsink.h" />

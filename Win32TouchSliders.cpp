@@ -12,6 +12,7 @@
 #endif
 
 #include "ComTouchDriver.h"
+#include "MidiOutput.h"
 
 #include <memory>
 #include <tchar.h>
@@ -21,6 +22,7 @@
 
 HWND ghWnd;
 std::unique_ptr<CComTouchDriver> gpTouchDriver;
+MidiOutput gMidiOutput;
 
 ATOM MyRegisterClass(HINSTANCE hInst);
 BOOL InitInstance(HINSTANCE hinst, int nCmdShow, ATOM hClass);
@@ -38,6 +40,16 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR pCmdLine, int nCmdS
   if (!InitInstance(hInstance, SW_SHOWMAXIMIZED, MyRegisterClass(hInstance))) {
     wprintf(L"Failed to initialize application");
     return 0;
+  }
+
+  if (!gMidiOutput.open(1)) {
+    printf("Failed to open MIDI output\n");
+    ::OutputDebugStringA("Failed to open MIDI output\n");
+  } else {
+    wprintf(L"Connected to MIDI device: %s\n", gMidiOutput.mDeviceName.c_str());
+    ::OutputDebugStringA("Connected to MIDI device: ");
+    ::OutputDebugStringW(gMidiOutput.mDeviceName.c_str());
+    ::OutputDebugStringA("\n");
   }
 
   MSG msg;

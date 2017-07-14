@@ -19,7 +19,7 @@ public:
   enum SliderType {TYPE_SLIDER, TYPE_KNOB};
   enum InteractionMode { MODE_ABSOLUTE, MODE_RELATIVE, MODE_DIAL, NUM_MODES};
 
-  CSlider(HWND hwnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode);
+  CSlider(HWND hwnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode, uint8_t numController);
   ~CSlider() override;
 
   void ManipulationStarted(Point2F Po) override;
@@ -40,6 +40,8 @@ private:
   void HandleTouchInAbsoluteInteractionMode(float y);
   void HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY);
 
+  void HandleValueChange();
+
   void MakeDial(Point2F center);
   void HideDial();
 
@@ -49,6 +51,9 @@ private:
   
   float mValue = 0.0f;
   float mRawTouchValue = 0.0f;
+
+  uint8_t mNumController = 0;
+  uint8_t mLastMidiValue = 0;
 
   InteractionMode mMode;
   SliderType mType;

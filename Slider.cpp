@@ -7,11 +7,15 @@
 // Copyright (c) v1ne
 
 #include "Geometry.h"
+#include "MidiOutput.h"
 #include "Slider.h"
+
 #include <manipulations.h>
 #include <math.h>
 #include <unordered_map>
 
+
+extern MidiOutput gMidiOutput;
 
 class DialOnALeash: public CTransformableDrawingObject {
 public:
@@ -132,6 +136,7 @@ public:
     const auto clampedRawValue = ::fmaxf(-0.1f, ::fminf(1.1f, rawValue));
     mpSlider->mRawTouchValue = clampedRawValue;
     mpSlider->mValue = ::fmaxf(0, ::fminf(1, clampedRawValue));
+    mpSlider->HandleValueChange();
   }
 
   void ManipulationCompleted(ViewBase::ManipCompletedParams) {
@@ -219,11 +224,12 @@ public:
 
 
 
-CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode)
+CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode, uint8_t numController)
   : CTransformableDrawingObject(hWnd, d2dDriver)
   , mMode(mode)
   , mType(type)
   , mValue(::rand() / float(RAND_MAX))
+  , mNumController(numController)
 {
   mpManipulationProc->put_SupportedManipulations(MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ALL
       & ~MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_SCALE);
@@ -322,6 +328,7 @@ void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY) {
 
 void CSlider::HandleTouchInAbsoluteInteractionMode(float y) {
   mValue = ::fmaxf(0, ::fminf(1, (mBottomPos - y) / mSliderHeight));
+  HandleValueChange();
 }
 
 
@@ -331,6 +338,7 @@ void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX,
   mRawTouchValue -= deltaY / mSliderHeight / dragScalingFactor;
   mRawTouchValue = ::fmaxf(-0.1f, ::fminf(1.1f, mRawTouchValue));
   mValue = ::fmaxf(0, ::fminf(1, mRawTouchValue));
+  HandleValueChange();
 }
 
 
@@ -448,4 +456,13 @@ ID2D1SolidColorBrush* CSlider::BrushForMode() {
   case MODE_DIAL: return mD2dDriver->m_spSomeGreenishBrush;
   }
   return nullptr;
+}
+
+
+void CSlider::HandleValueChange() {
+  auto currentValue = uint8_t(::roundf(127.f * mValue));
+  if (currentValue != mLastMidiValue) {
+    mLastMidiValue = currentValue;
+    gMidiOutput.sendControllerChange(mNumController, currentValue);
+  }
 }
