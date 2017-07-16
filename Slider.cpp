@@ -241,7 +241,7 @@ CSlider::~CSlider() {
 bool CSlider::HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPUT* pData) {
   switch(type) {
   case DOWN: {
-    if (mTouchPoints.size() == 1 && !mpDial) {
+    if (!gShiftPressed && mTouchPoints.size() == 1 && !mpDial) {
       MakeDial(pos);
       mpDial->mIsShown=true;
       TOUCHINPUT fakeInput;
@@ -257,7 +257,7 @@ bool CSlider::HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPU
     return success; }
 
   case UP:
-    if (!mpDial && !mTouchPoints.empty() && !mDidMajorMove && !mIsInertiaActive)
+    if (!gShiftPressed && !mpDial && !mTouchPoints.empty() && !mDidMajorMove && !mIsInertiaActive)
       HandleTouchInAbsoluteInteractionMode(pos.y);
     mTouchPoints.erase(std::find(mTouchPoints.begin(), mTouchPoints.end(), pData->dwID));
     if(mTouchPoints.empty()) {
@@ -405,6 +405,11 @@ void CSlider::PaintSlider()
   mD2dDriver->RenderText({mRenderPos.x, mRenderPos.y, mRenderPos.x + mSize.x, mRenderPos.y + topBorder}, buf, wcslen(buf), mD2dDriver->m_spDimGreyBrush);
 
   if (!mpDial && !mTouchPoints.empty() && !mIsInertiaActive && mCurrentTouchPoint.x != 0.f && mCurrentTouchPoint.y != 0.f) {
+    D2D1_MATRIX_3X2_F oldTransform;
+    mpRenderTarget->GetTransform(&oldTransform);
+    const auto identityMatrix = D2D1::Matrix3x2F::Identity();
+    mpRenderTarget->SetTransform(&identityMatrix);
+
     const auto ghostRange = 0.5f;
     const auto ghostScaleFactor = mDragScalingFactor / 100.f;
     const auto percentPerTick = 1.f;
@@ -417,7 +422,7 @@ void CSlider::PaintSlider()
     const auto ghostSliderSize = Point2F{250.f, ghostValueRange * 100 * ghostScaleFactor * percentPerTick};
     const auto triangleStrokeSize = Point2F{16.f, 4.f};
     
-    if ((mCurrentTouchPoint - Center()).mag()> ghostSliderSize.x / 2.f) {
+    {//if ((mCurrentTouchPoint - Center()).mag()> ghostSliderSize.x / 2.f) {
       const auto dashDelta = ghostScaleFactor * percentPerTick;
       const auto initialOffset = mCurrentTouchPoint.y + mRawTouchValue * 100 * ghostScaleFactor * percentPerTick;
       auto dashY = initialOffset - (minValue + 0.005f) * 100 * ghostScaleFactor * percentPerTick;
@@ -442,7 +447,7 @@ void CSlider::PaintSlider()
         mD2dDriver->RenderTiltedRect({mCurrentTouchPoint.x, dashY}, halfWurstfingerWidth, 180, {isLongTick?dashWidth : dashWidth/2, 1.f}, mD2dDriver->m_spWhiteBrush);
         mD2dDriver->RenderTiltedRect({mCurrentTouchPoint.x, dashY}, halfWurstfingerWidth,   0, {isLongTick?dashWidth : dashWidth/2, 1.f}, mD2dDriver->m_spWhiteBrush);
 
-        if (isLongTick) {
+        if (isLongTick && tickCount < 100) {
           const auto middleLeft = Point2F{mCurrentTouchPoint.x - halfWurstfingerWidth - dashWidth, dashY - 25.f};
           wsprintf(buf, L"%d%%", tickCount);
           mD2dDriver->RenderMediumText({middleLeft.x, middleLeft.y, middleLeft.x + dashWidth/2, middleLeft.y + 100.f}, buf, wcslen(buf), mD2dDriver->m_spWhiteBrush);
@@ -450,6 +455,8 @@ void CSlider::PaintSlider()
         dashY -= dashDelta;
       }
     }
+
+    mpRenderTarget->SetTransform(&oldTransform);
   }
 }
 
