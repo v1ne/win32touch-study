@@ -12,10 +12,10 @@
 
 #include <manipulations.h>
 
-#define NUM_CORE_OBJECTS 4
+#define NUM_CORE_OBJECTS 2
 
-#define NUM_SLIDERS 33
-#define NUM_KNOBS 25
+#define NUM_SLIDERS 14
+#define NUM_KNOBS 15
 
 CComTouchDriver::CComTouchDriver(HWND hWnd)
   : mhWnd(hWnd)
@@ -42,14 +42,11 @@ bool CComTouchDriver::Initialize() {
   uint8_t numController = 0;
 
   for (int i = 0; i < NUM_SLIDERS + 1; i++) {
-    mCoreObjects.push_front(new CSlider(mhWnd, mD2dDriver, CSlider::TYPE_SLIDER,
-      i < NUM_SLIDERS ? (i % 2) ? CSlider::MODE_RELATIVE : CSlider::MODE_DIAL : CSlider::MODE_RELATIVE,
-      numController++));
+    mCoreObjects.push_front(new CSlider(mhWnd, mD2dDriver, CSlider::TYPE_SLIDER, numController++));
   }
 
   for (int i = 0; i < NUM_KNOBS; i++) {
-    mCoreObjects.push_front(new CSlider(mhWnd, mD2dDriver,
-      CSlider::TYPE_KNOB, CSlider::InteractionMode(i % CSlider::NUM_MODES), numController++));
+    mCoreObjects.push_front(new CSlider(mhWnd, mD2dDriver, CSlider::TYPE_KNOB, numController++));
   }
 
   mCoreObjectsInInitialOrder.reserve(mCoreObjects.size());
@@ -187,8 +184,8 @@ void CComTouchDriver::RenderInitialState(Point2I physicalClientArea) {
     ++iObject;
   }
 
-  const auto bigSliderPos = Point2F{sliderBorder.x + sliderDistance.x*11, sliderBorder.y};
-  const auto bigSliderSize = Point2F{50, 3*sliderDistance.y - sliderBorder.y};
+  const auto bigSliderPos = Point2F{sliderBorder.x + sliderDistance.x*7, sliderBorder.y};
+  const auto bigSliderSize = Point2F{50, 2*sliderDistance.y - sliderBorder.y};
   ((CSlider*)*iObject)->ResetState(bigSliderPos, clientArea, bigSliderSize);
 
   const auto knobBorder = Point2F{2.f};

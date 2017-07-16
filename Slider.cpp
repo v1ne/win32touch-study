@@ -223,9 +223,8 @@ public:
 
 
 
-CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, InteractionMode mode, uint8_t numController)
+CSlider::CSlider(HWND hWnd, CD2DDriver* d2dDriver, SliderType type, uint8_t numController)
   : CTransformableDrawingObject(hWnd, d2dDriver)
-  , mMode(mode)
   , mType(type)
   , mValue(::rand() / float(RAND_MAX))
   , mNumController(numController)
@@ -290,17 +289,17 @@ void CSlider::ManipulationStarted(Point2F pos) {
   mDidMajorMove = false;
   mDidSetAbsoluteValue = false;
   mFirstTouchPoint = pos;
+  mFirstTouchValue = mValue;
+  mCurrentTouchPoint = {0.f, 0.f};
 
-  if (mMode == MODE_DIAL)
+  if(mType == TYPE_KNOB) {
     mDidMajorMove = true;
-
-  if(mMode == MODE_DIAL) {
     MakeDial(pos);
     mpDial->mIsShown=true;
     mpDial->ManipulationStarted(pos);
   } else {
     if(!gShiftPressed)
-      HandleTouch(pos.y, 0.f, 0.f);
+      HandleTouch(0.f, 0.f);
   }
 }
 
@@ -314,24 +313,21 @@ void CSlider::ManipulationDelta(ViewBase::ManipDeltaParams params) {
     Scale(params.dScale);
     Translate(params.dTranslation, params.isExtrapolated);
   } else {
-    HandleTouch(params.pos.y, params.sumTranslation.x, params.dTranslation.y);
+    mCurrentTouchPoint = params.pos;
+    HandleTouch(params.sumTranslation.x, params.dTranslation.y);
   }
 }
 
 
 void CSlider::ManipulationCompleted(ViewBase::ManipCompletedParams params) {
   if(!gShiftPressed)
-    HandleTouch(params.pos.y, params.sumTranslation.x, 0.f);
+    HandleTouch(params.sumTranslation.x, 0.f);
 }
 
 
-void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY) {
-  switch(mMode) {
-  case MODE_RELATIVE:
-    if (!mDidSetAbsoluteValue)
-      HandleTouchInRelativeInteractionMode(cumultiveTranslationX, deltaY);
-    break;
-  }
+void CSlider::HandleTouch(float cumultiveTranslationX, float deltaY) {
+  if (!mDidSetAbsoluteValue && !mpDial)
+    HandleTouchInRelativeInteractionMode(cumultiveTranslationX, deltaY);
 }
 
 
@@ -343,9 +339,10 @@ void CSlider::HandleTouchInAbsoluteInteractionMode(float y) {
 
 
 void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY) {
-  const auto dragScalingFactor = 1 + ::fabsf(cumulativeTranslationX) / (2 * mSize.x);
+  const auto dragScalingFactor = (1 + ::fabsf(cumulativeTranslationX) / (2 * mSize.x)) * mSliderHeight;
+  mDragScalingFactor = dragScalingFactor;
 
-  mRawTouchValue -= deltaY / mSliderHeight / dragScalingFactor;
+  mRawTouchValue -= deltaY / dragScalingFactor;
   mRawTouchValue = ::fmaxf(-0.1f, ::fminf(1.1f, mRawTouchValue));
   mValue = ::fmaxf(0, ::fminf(1, mRawTouchValue));
   HandleValueChange();
@@ -403,6 +400,54 @@ void CSlider::PaintSlider()
   wchar_t buf[16];
   wsprintf(buf, L"%d%%", int(mValue*100));
   mD2dDriver->RenderText({mRenderPos.x, mRenderPos.y, mRenderPos.x + mSize.x, mRenderPos.y + topBorder}, buf, wcslen(buf), mD2dDriver->m_spDimGreyBrush);
+
+  if (!mpDial && !mTouchPoints.empty() && !mIsInertiaActive && mCurrentTouchPoint.x != 0.f && mCurrentTouchPoint.y != 0.f) {
+    const auto ghostRange = 0.5f;
+    const auto ghostScaleFactor = mDragScalingFactor / 100.f;
+    const auto percentPerTick = 1.f;
+    const auto ticksPerLabel = 10;
+
+    const auto minValue = ::roundf(100*::fminf(1.f, ::fmaxf(0.f, mRawTouchValue - ghostRange/2.f)))/100.f;
+    const auto maxValue = ::roundf(100*::fminf(1.f, ::fmaxf(0.f, mRawTouchValue + ghostRange/2.f)))/100.f;
+    const auto ghostValueRange = maxValue - minValue;
+
+    const auto ghostSliderSize = Point2F{250.f, ghostValueRange * 100 * ghostScaleFactor * percentPerTick};
+    const auto triangleStrokeSize = Point2F{16.f, 4.f};
+    
+    if ((mCurrentTouchPoint - Center()).mag()> ghostSliderSize.x / 2.f) {
+      const auto dashDelta = ghostScaleFactor * percentPerTick;
+      const auto initialOffset = mCurrentTouchPoint.y + mRawTouchValue * 100 * ghostScaleFactor * percentPerTick;
+      auto dashY = initialOffset - (minValue + 0.005f) * 100 * ghostScaleFactor * percentPerTick;
+
+      const auto topLeft = Point2F{mCurrentTouchPoint.x - ghostSliderSize.x/2.f, dashY - dashDelta * ghostValueRange * 100};
+      const auto bottomRight = Point2F{mCurrentTouchPoint.x + ghostSliderSize.x/2.f, dashY};
+      mpRenderTarget->FillRectangle({topLeft.x, topLeft.y, bottomRight.x, bottomRight.y}, mD2dDriver->m_spSemitransparentDarkBrush);
+
+
+      const auto sliderTriangleOffset = Point2F{ghostSliderSize.x/2 - triangleStrokeSize.x, 0};
+      mD2dDriver->RenderTiltedRect(mCurrentTouchPoint - sliderTriangleOffset, 0, 180+45, triangleStrokeSize, mD2dDriver->m_spWhiteBrush);
+      mD2dDriver->RenderTiltedRect(mCurrentTouchPoint - sliderTriangleOffset, 0, 180-45, triangleStrokeSize, mD2dDriver->m_spWhiteBrush);
+      mD2dDriver->RenderTiltedRect(mCurrentTouchPoint + sliderTriangleOffset, 0,  45, triangleStrokeSize, mD2dDriver->m_spWhiteBrush);
+      mD2dDriver->RenderTiltedRect(mCurrentTouchPoint + sliderTriangleOffset, 0, -45, triangleStrokeSize, mD2dDriver->m_spWhiteBrush);
+
+      auto tickCount = int(::roundf(100*minValue));
+      for(auto currentValue = minValue; currentValue <= maxValue; currentValue += (percentPerTick / 100.f), ++tickCount) {
+        const auto halfWurstfingerWidth = 40.f;
+        const auto dashWidth = ghostSliderSize.x/2.f - triangleStrokeSize.x - halfWurstfingerWidth - 2.f;
+        const auto isLongTick = !(tickCount % ticksPerLabel);
+
+        mD2dDriver->RenderTiltedRect({mCurrentTouchPoint.x, dashY}, halfWurstfingerWidth, 180, {isLongTick?dashWidth : dashWidth/2, 1.f}, mD2dDriver->m_spWhiteBrush);
+        mD2dDriver->RenderTiltedRect({mCurrentTouchPoint.x, dashY}, halfWurstfingerWidth,   0, {isLongTick?dashWidth : dashWidth/2, 1.f}, mD2dDriver->m_spWhiteBrush);
+
+        if (isLongTick) {
+          const auto middleLeft = Point2F{mCurrentTouchPoint.x - halfWurstfingerWidth - dashWidth, dashY - 25.f};
+          wsprintf(buf, L"%d%%", tickCount);
+          mD2dDriver->RenderMediumText({middleLeft.x, middleLeft.y, middleLeft.x + dashWidth/2, middleLeft.y + 100.f}, buf, wcslen(buf), mD2dDriver->m_spWhiteBrush);
+        }
+        dashY -= dashDelta;
+      }
+    }
+  }
 }
 
 
@@ -460,10 +505,10 @@ void CSlider::HideDial()
 }
 
 ID2D1SolidColorBrush* CSlider::BrushForMode() {
-  switch(mMode) {
-  case MODE_ABSOLUTE: return mD2dDriver->m_spSomePinkishBlueBrush;
-  case MODE_RELATIVE: return mD2dDriver->m_spCornflowerBrush;
-  case MODE_DIAL: return mD2dDriver->m_spSomeGreenishBrush;
+  switch(mNumController % 3) {
+  case 0: return mD2dDriver->m_spSomePinkishBlueBrush;
+  case 1: return mD2dDriver->m_spCornflowerBrush;
+  case 2: return mD2dDriver->m_spSomeGreenishBrush;
   }
   return nullptr;
 }
@@ -475,4 +520,17 @@ void CSlider::HandleValueChange() {
     mLastMidiValue = currentValue;
     gMidiOutput.sendControllerChange(mNumController, currentValue);
   }
+}
+
+
+Point2F CSlider::PointProjectedToOutline(Point2F p) {
+  auto bottomRight = mPos + mSize;
+  auto center = mPos + mSize/2.f;
+  const auto isInsideRectX = p.x >= mPos.x && p.x <= bottomRight.x;
+  const auto isInsideRectY = p.y >= mPos.y && p.y <= bottomRight.y;
+  const auto isXDistCloserThanYDist = ::fabsf(p.x - center.x) < ::fabsf(p.y - center.y);
+  if(!isXDistCloserThanYDist)
+    return {p.x < center.x ? mPos.x : bottomRight.x, center.y};
+  else
+    return {center.x, p.y < center.y ? mPos.y : bottomRight.y};
 }
