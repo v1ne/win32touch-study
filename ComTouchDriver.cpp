@@ -43,7 +43,7 @@ bool CComTouchDriver::Initialize() {
 
   for (int i = 0; i < NUM_SLIDERS + 1; i++) {
     mCoreObjects.push_front(new CSlider(mhWnd, mD2dDriver, CSlider::TYPE_SLIDER,
-      i < NUM_SLIDERS ? CSlider::InteractionMode(i % CSlider::NUM_MODES) : CSlider::MODE_RELATIVE,
+      i < NUM_SLIDERS ? (i % 2) ? CSlider::MODE_RELATIVE : CSlider::MODE_DIAL : CSlider::MODE_RELATIVE,
       numController++));
   }
 

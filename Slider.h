@@ -49,6 +49,11 @@ private:
   float mBottomPos;
   float mSliderHeight;
   
+  Point2F mFirstTouchPoint = {0.f, 0.f};
+  bool mDidMajorMove = false;
+  bool mIsInTouchEvent = false;
+  bool mDidSetAbsoluteValue = false;
+
   float mValue = 0.0f;
   float mRawTouchValue = 0.0f;
 

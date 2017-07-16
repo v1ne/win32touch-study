@@ -17,6 +17,7 @@
 
 extern MidiOutput gMidiOutput;
 
+
 class DialOnALeash: public CTransformableDrawingObject {
 public:
   static constexpr auto sInnerRadius = 150.f;
@@ -27,7 +28,7 @@ public:
       , mpSlider(pParent) {
     mpManipulationProc->put_SupportedManipulations(
       MANIPULATION_PROCESSOR_MANIPULATIONS::MANIPULATION_ROTATE);
-    
+
     //mpManipulationProc->put_MinimumScaleRotateRadius(100'000.f);
     m_lastMatrix = D2D1::Matrix3x2F::Identity();
 
@@ -129,8 +130,6 @@ public:
 
     SetManipulationOrigin(mPos);
     Rotate(params.dRotation * rads);
-    //Scale(params.dScale);
-    //Translate(params.dTranslation, params.isExtrapolated);
 
     const auto rawValue = mpSlider->mRawTouchValue + params.dRotation / (2*3.14159f);
     const auto clampedRawValue = ::fmaxf(-0.1f, ::fminf(1.1f, rawValue));
@@ -184,7 +183,7 @@ public:
         ? Point2F{innerRadius, longMarkSize.y}
         : stepCount % bigMarksEvery == 0 ? longMarkSize : shortMarkSize;
       markSize.x += i / 30.f;
-      mD2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, finalAngle, markSize, 
+      mD2dDriver->RenderTiltedRect(pos, innerRadius - markSize.x, finalAngle, markSize,
         (i == 0 || i >= sAngleRange) ? mD2dDriver->m_spBlackBrush : mD2dDriver->m_spDarkGreyBrush);
 
       if (!(stepCount % bigMarksEvery)) {
@@ -247,17 +246,25 @@ bool CSlider::HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPU
     if (mpDial)
       success &= mpDial->HandleTouchEvent(type, pos, pData);
     return success; }
-  case INERTIA:
-  case UP: {
+
+  case UP:
+    if (!mpDial && mIsInTouchEvent && !mDidMajorMove && !mIsInertiaActive)
+      HandleTouchInAbsoluteInteractionMode(pos.y);
+  case INERTIA: {
     bool success = true;
     if (mpDial)
       success = mpDial->HandleTouchEvent(type, pos, pData);
-    success &= ViewBase::HandleTouchEvent(type, pos, pData);
+    else
+      success &= ViewBase::HandleTouchEvent(type, pos, pData);
     return success; }
+
   case MOVE:
+    if(mIsInTouchEvent && !mIsInertiaActive && !mDidMajorMove && (pos - mFirstTouchPoint).mag() > 2.f)
+      mDidMajorMove = true;
+
     if(mpDial)
       return mpDial->HandleTouchEvent(type, pos, pData);
-    else
+    else if(!mIsInertiaActive || !mDidMajorMove)
       return ViewBase::HandleTouchEvent(type, pos, pData);
     break;
   }
@@ -268,6 +275,14 @@ void CSlider::ManipulationStarted(Point2F pos) {
   RestoreRealPosition();
 
   mRawTouchValue = mValue;
+
+  mIsInTouchEvent = true;
+  mDidMajorMove = false;
+  mDidSetAbsoluteValue = false;
+  mFirstTouchPoint = pos;
+
+  if (mMode == MODE_DIAL)
+    mDidMajorMove = true;
 
   if(mMode == MODE_DIAL) {
     MakeDial(pos);
@@ -288,11 +303,6 @@ void CSlider::ManipulationDelta(ViewBase::ManipDeltaParams params) {
     Rotate(params.dRotation * rads);
     Scale(params.dScale);
     Translate(params.dTranslation, params.isExtrapolated);
-#if 0
-  } else if(mMode == MODE_DIAL) {
-    mpDial->ManipulationDelta(params);
-    if (!InRegion(params.pos)) mpDial->mIsShown = true;
-#endif
   } else {
     HandleTouch(params.pos.y, params.sumTranslation.x, params.dTranslation.y);
   }
@@ -300,33 +310,25 @@ void CSlider::ManipulationDelta(ViewBase::ManipDeltaParams params) {
 
 
 void CSlider::ManipulationCompleted(ViewBase::ManipCompletedParams params) {
-#if 0
-  if(mMode == MODE_DIAL) {
-    if(mpDial) mpDial->ManipulationCompleted(params);
-    HideDial();
-  } else {
-#endif
-    if(!gShiftPressed)
-      HandleTouch(params.pos.y, params.sumTranslation.x, 0.f);
-#if 0
-  }
-#endif
+  if(!gShiftPressed)
+    HandleTouch(params.pos.y, params.sumTranslation.x, 0.f);
+
+  mIsInTouchEvent = false;
 }
 
 
 void CSlider::HandleTouch(float y, float cumultiveTranslationX, float deltaY) {
   switch(mMode) {
-  case MODE_ABSOLUTE:
-    HandleTouchInAbsoluteInteractionMode(y);
-    break;
   case MODE_RELATIVE:
-    HandleTouchInRelativeInteractionMode(cumultiveTranslationX, deltaY);
+    if (!mDidSetAbsoluteValue)
+      HandleTouchInRelativeInteractionMode(cumultiveTranslationX, deltaY);
     break;
   }
 }
 
 
 void CSlider::HandleTouchInAbsoluteInteractionMode(float y) {
+  mDidSetAbsoluteValue = true;
   mValue = ::fmaxf(0, ::fminf(1, (mBottomPos - y) / mSliderHeight));
   HandleValueChange();
 }
