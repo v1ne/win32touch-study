@@ -342,7 +342,7 @@ void CSlider::HandleTouchInAbsoluteInteractionMode(float y) {
 
 
 void CSlider::HandleTouchInRelativeInteractionMode(float cumulativeTranslationX, float deltaY) {
-  const auto dragScalingFactor = (1 + ::fabsf(cumulativeTranslationX) / (2 * mSize.x)) * mSliderHeight;
+  const auto dragScalingFactor = (1 + ::fabsf(mCurrentTouchPoint.x - mFirstTouchPoint.x) / (2 * mSize.x)) * mSliderHeight;
   mDragScalingFactor = dragScalingFactor;
 
   mRawTouchValue -= deltaY / dragScalingFactor;
