@@ -173,7 +173,7 @@ public:
     const auto bigMarksEvery = 10;
     const auto shortMarkSize = Point2F{10.f, 1.f};
     const auto longMarkSize = Point2F{15.f, 3.f};
-    const auto angularOffset = -mpSlider->mRawTouchValue * sAngleRange + triangleAngle;
+    const auto angularOffset = -(mpSlider->mRawTouchValue - 0.005f) * sAngleRange + triangleAngle;
     wchar_t buf[16];
     int stepCount = 0;
     const auto translateMatrix = D2D1::Matrix3x2F::Translation({0.f, -(innerRadius + 15.f)});
@@ -260,6 +260,9 @@ bool CSlider::HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPU
     if (!mpDial && !mTouchPoints.empty() && !mDidMajorMove && !mIsInertiaActive)
       HandleTouchInAbsoluteInteractionMode(pos.y);
     mTouchPoints.erase(std::find(mTouchPoints.begin(), mTouchPoints.end(), pData->dwID));
+    if(mTouchPoints.empty()) {
+      HideDial();
+    }
   case INERTIA: {
     bool success = true;
     if (mpDial)
