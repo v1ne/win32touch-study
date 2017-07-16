@@ -10,7 +10,10 @@
 
 #include "D2DDriver.h"
 #include "ViewBase.h"
-#include <windows.h>
+
+#include <vector>
+
+#include <Windows.h>
 
 class DialOnALeash;
 
@@ -51,7 +54,7 @@ private:
   
   Point2F mFirstTouchPoint = {0.f, 0.f};
   bool mDidMajorMove = false;
-  bool mIsInTouchEvent = false;
+  std::vector<DWORD> mTouchPoints;
   bool mDidSetAbsoluteValue = false;
 
   float mValue = 0.0f;

@@ -242,24 +242,35 @@ CSlider::~CSlider() {
 bool CSlider::HandleTouchEvent(TouchEventType type, Point2F pos, const TOUCHINPUT* pData) {
   switch(type) {
   case DOWN: {
+    if (mTouchPoints.size() == 1 && !mpDial) {
+      MakeDial(pos);
+      mpDial->mIsShown=true;
+      TOUCHINPUT fakeInput;
+      fakeInput.dwID = mTouchPoints[0];
+      fakeInput.dwTime = pData->dwTime;
+      mpDial->HandleTouchEvent(DOWN, mFirstTouchPoint, &fakeInput);
+    }
+    mTouchPoints.emplace_back(pData->dwID);
+
     auto success = ViewBase::HandleTouchEvent(type, pos, pData);
     if (mpDial)
       success &= mpDial->HandleTouchEvent(type, pos, pData);
     return success; }
 
   case UP:
-    if (!mpDial && mIsInTouchEvent && !mDidMajorMove && !mIsInertiaActive)
+    if (!mpDial && !mTouchPoints.empty() && !mDidMajorMove && !mIsInertiaActive)
       HandleTouchInAbsoluteInteractionMode(pos.y);
+    mTouchPoints.erase(std::find(mTouchPoints.begin(), mTouchPoints.end(), pData->dwID));
   case INERTIA: {
     bool success = true;
     if (mpDial)
       success = mpDial->HandleTouchEvent(type, pos, pData);
-    else
+    if (!mpDial || type == UP)
       success &= ViewBase::HandleTouchEvent(type, pos, pData);
     return success; }
 
   case MOVE:
-    if(mIsInTouchEvent && !mIsInertiaActive && !mDidMajorMove && (pos - mFirstTouchPoint).mag() > 2.f)
+    if(!mTouchPoints.empty() && !mIsInertiaActive && !mDidMajorMove && (pos - mFirstTouchPoint).mag() > 2.f)
       mDidMajorMove = true;
 
     if(mpDial)
@@ -276,7 +287,6 @@ void CSlider::ManipulationStarted(Point2F pos) {
 
   mRawTouchValue = mValue;
 
-  mIsInTouchEvent = true;
   mDidMajorMove = false;
   mDidSetAbsoluteValue = false;
   mFirstTouchPoint = pos;
@@ -312,8 +322,6 @@ void CSlider::ManipulationDelta(ViewBase::ManipDeltaParams params) {
 void CSlider::ManipulationCompleted(ViewBase::ManipCompletedParams params) {
   if(!gShiftPressed)
     HandleTouch(params.pos.y, params.sumTranslation.x, 0.f);
-
-  mIsInTouchEvent = false;
 }
 
 
