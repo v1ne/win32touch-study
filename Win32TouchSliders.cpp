@@ -170,7 +170,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     PostQuitMessage(0);
     return 1;
 
-  case WM_SETFOCUS:
   case WM_SIZE: {
     RECT rect;
     ::GetClientRect(ghWnd, &rect);

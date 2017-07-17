@@ -295,15 +295,15 @@ void CSlider::ManipulationStarted(Point2F pos) {
   mFirstTouchValue = mValue;
   mCurrentTouchPoint = {0.f, 0.f};
 
-  if(mType == TYPE_KNOB) {
-    mDidMajorMove = true;
-    MakeDial(pos);
-    mpDial->mIsShown=true;
-    mpDial->ManipulationStarted(pos);
-  } else {
-    if(!gShiftPressed)
-      HandleTouch(0.f, 0.f);
-  }
+  if(!gShiftPressed)
+    if(mType == TYPE_KNOB) {
+      mDidMajorMove = true;
+      MakeDial(pos);
+      mpDial->mIsShown=true;
+      mpDial->ManipulationStarted(pos);
+    } else {
+        HandleTouch(0.f, 0.f);
+    }
 }
 
 
